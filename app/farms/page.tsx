@@ -1,0 +1,496 @@
+// /farms 페이지
+
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { AlertTriangle, Filter, Inbox, SearchX } from "lucide-react";
+import TopBar from "@/components/shell/TopBar";
+import FarmSummaryTable from "@/components/farms/FarmSummaryTable";
+import FarmSummaryFilters from "@/components/farms/FarmSummaryFilters";
+import KpiCards from "@/components/farms/KpiCards";
+import OfflineBanner from "@/components/farms/OfflineBanner";
+import StatusPieChart from "@/components/charts/StatusPieChart";
+import FarmSummaryCards from "@/components/farms/FarmSummaryCards";
+import EmptyState from "@/components/common/EmptyState";
+import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
+import FarmSummaryTableSkeleton from "@/components/skeletons/FarmSummaryTableSkeleton";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { FarmsSummaryResponseDTO } from "@/types/dto";
+
+async function fetchFarmsSummary(): Promise<FarmsSummaryResponseDTO> {
+  const res = await fetch("/api/farms/summary");
+  if (!res.ok) {
+    throw new Error("Failed to fetch farms summary");
+  }
+  return res.json();
+}
+
+export default function FarmsPage() {
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortBy, setSortBy] = useState("registNo");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  type StatusKey = "normal" | "warn" | "danger" | "offline";
+  const [statusFilter, setStatusFilter] = useState<StatusKey[]>([]);
+  const [highlighted, setHighlighted] = useState<Set<string>>(new Set());
+  const prevSnapshotRef = useRef<Map<string, string>>(new Map());
+  const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState({
+    totalRooms: true,
+    normal: true,
+    warn: true,
+    danger: true,
+    offline: true,
+    freshness: true,
+    lastUpdated: true,
+  });
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["farms-summary"],
+    queryFn: fetchFarmsSummary,
+    refetchInterval: 15000, // 15초 폴링
+    refetchOnWindowFocus: false,
+    retry: 1,
+    retryDelay: 2000,
+  });
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // 필터링 및 정렬 (데이터가 있을 때만)
+  const baseItems = data
+    ? (() => {
+        let items = [...data.items];
+        if (debouncedSearch) {
+          items = items.filter((item) =>
+            item.registNo.toLowerCase().includes(debouncedSearch.toLowerCase())
+          );
+        }
+        if (sortBy === "registNo") {
+          items.sort((a, b) =>
+            sortDir === "asc"
+              ? a.registNo.localeCompare(b.registNo)
+              : b.registNo.localeCompare(a.registNo)
+          );
+        } else if (sortBy === "totalRooms") {
+          items.sort((a, b) =>
+            sortDir === "asc"
+              ? a.totalRooms - b.totalRooms
+              : b.totalRooms - a.totalRooms
+          );
+        } else if (sortBy === "offline") {
+          items.sort((a, b) =>
+            sortDir === "asc" ? a.offline - b.offline : b.offline - a.offline
+          );
+        } else if (sortBy === "danger") {
+          items.sort((a, b) =>
+            sortDir === "asc" ? a.danger - b.danger : b.danger - a.danger
+          );
+        } else if (sortBy === "freshness") {
+          items.sort((a, b) => {
+            const aFresh = a.freshnessSec ?? Infinity;
+            const bFresh = b.freshnessSec ?? Infinity;
+            return sortDir === "asc" ? aFresh - bFresh : bFresh - aFresh;
+          });
+        }
+        return items;
+      })()
+    : [];
+
+  const filteredItems = statusFilter.length > 0
+    ? baseItems.filter((item) => {
+        const state: "normal" | "warn" | "danger" | "offline" =
+          item.offline > 0
+            ? "offline"
+            : item.danger > 0
+            ? "danger"
+            : item.warn > 0
+            ? "warn"
+            : "normal";
+        return statusFilter.includes(state);
+      })
+    : baseItems;
+  const handleStatusSelect = (id: StatusKey) => {
+    setStatusFilter((prev) =>
+      prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
+    );
+  };
+
+  useEffect(() => {
+    if (!data) return;
+    const nextMap = new Map<string, string>();
+    const changed = new Set<string>();
+    for (const item of data.items) {
+      const snapshot = `${item.totalRooms}-${item.normal}-${item.warn}-${item.danger}-${item.offline}-${item.freshnessSec ?? "na"}`;
+      nextMap.set(item.registNo, snapshot);
+      const prev = prevSnapshotRef.current.get(item.registNo);
+      if (prev && prev !== snapshot) {
+        changed.add(item.registNo);
+      }
+    }
+    prevSnapshotRef.current = nextMap;
+    if (changed.size > 0) {
+      setHighlighted(changed);
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = setTimeout(() => {
+        setHighlighted(new Set());
+      }, 2000);
+    }
+  }, [data]);
+
+  // 전체 통계
+  const totalNormal = baseItems.reduce((sum, item) => sum + item.normal, 0);
+  const totalWarn = baseItems.reduce((sum, item) => sum + item.warn, 0);
+  const totalDanger = baseItems.reduce(
+    (sum, item) => sum + item.danger,
+    0
+  );
+  const totalOffline = baseItems.reduce(
+    (sum, item) => sum + item.offline,
+    0
+  );
+  const totalRooms = baseItems.reduce((sum, item) => sum + item.totalRooms, 0);
+  const normalRate = totalRooms > 0 ? (totalNormal / totalRooms) * 100 : 0;
+  const offlineRate = totalRooms > 0 ? (totalOffline / totalRooms) * 100 : 0;
+  const formatRate = (value: number) => `${value.toFixed(1)}%`;
+  
+  // 마지막 업데이트 시간 (가장 최신)
+  const lastUpdatedAtKst = baseItems.length > 0
+    ? baseItems.reduce((latest, item) => {
+        if (!item.lastUpdatedAtKst) return latest;
+        if (!latest) return item.lastUpdatedAtKst;
+        return new Date(item.lastUpdatedAtKst) > new Date(latest)
+          ? item.lastUpdatedAtKst
+          : latest;
+      }, null as string | null)
+    : null;
+
+  const statusPieData = [
+    { id: "normal", name: "정상", value: totalNormal, color: "#22c55e" },
+    { id: "warn", name: "경고", value: totalWarn, color: "#eab308" },
+    { id: "danger", name: "위험", value: totalDanger, color: "#ef4444" },
+    { id: "offline", name: "오프라인", value: totalOffline, color: "#9ca3af" },
+  ];
+  const statusMeta = [
+    { id: "normal", label: "정상", count: totalNormal },
+    { id: "warn", label: "경고", count: totalWarn },
+    { id: "danger", label: "위험", count: totalDanger },
+    { id: "offline", label: "오프라인", count: totalOffline },
+  ] as const;
+
+  const statusLabel: Record<string, string> = {
+    normal: "정상",
+    warn: "경고",
+    danger: "위험",
+    offline: "오프라인",
+  };
+  const sortLabel: Record<string, string> = {
+    registNo: "농장",
+    totalRooms: "총 방",
+    offline: "오프라인",
+    danger: "위험",
+    freshness: "최신성",
+  };
+  const defaultSortDir: Record<string, "asc" | "desc"> = {
+    registNo: "asc",
+    totalRooms: "desc",
+    danger: "desc",
+    offline: "desc",
+    freshness: "asc",
+  };
+
+  const handleSortChange = (key: string) => {
+    if (key === sortBy) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortBy(key);
+    setSortDir(defaultSortDir[key] ?? "desc");
+  };
+
+  // 조건부 return
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <TopBar />
+        <main className="container mx-auto px-4 py-6">
+          <h1 className="text-2xl font-bold mb-6">농장 목록</h1>
+          <div className="bg-white rounded-lg shadow-sm border mb-4 p-4">
+            <Skeleton className="h-4 w-32 mb-2" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+          <KpiCardsSkeleton />
+          <FarmSummaryTableSkeleton />
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <TopBar />
+        <main className="container mx-auto px-4 py-6">
+          <div className="space-y-4">
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>데이터를 불러오지 못했습니다</AlertTitle>
+              <AlertDescription>오류: {String(error)}</AlertDescription>
+            </Alert>
+            <EmptyState
+              title="농장 데이터를 불러올 수 없습니다"
+              description="잠시 후 다시 시도해 주세요."
+              icon={<AlertTriangle className="h-5 w-5 text-muted-foreground" />}
+            />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div>데이터를 불러오는 중...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <TopBar
+        summary={
+          <>
+            <span>정상률 {formatRate(normalRate)}</span>
+            <span>오프라인율 {formatRate(offlineRate)}</span>
+            <span>전체 방 {totalRooms}</span>
+          </>
+        }
+      />
+      <main className="container mx-auto px-4 py-6">
+        <div className="sticky top-0 z-30 -mx-4 px-4 py-2 mb-2 bg-white/95 backdrop-blur border-b">
+          <div className="text-xs text-muted-foreground">
+            마지막 갱신:{" "}
+            {lastUpdatedAtKst
+              ? new Date(lastUpdatedAtKst).toLocaleString("ko-KR")
+              : "N/A"}
+          </div>
+        </div>
+        <h1 className="text-2xl font-bold mb-6">농장 목록</h1>
+        <div className="bg-white rounded-lg shadow-sm border mb-4 p-4">
+          <div className="text-sm text-muted-foreground mb-2">
+            전체 요약
+            {lastUpdatedAtKst && (
+              <span className="ml-2">
+                마지막 업데이트:{" "}
+                {new Date(lastUpdatedAtKst).toLocaleString("ko-KR")}
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+            <div>
+              <div className="text-muted-foreground">전체 방</div>
+              <div className="text-lg font-semibold">{totalRooms}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">정상률</div>
+              <div className="text-lg font-semibold text-green-600">
+                {formatRate(normalRate)}
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">오프라인율</div>
+              <div className="text-lg font-semibold text-gray-600">
+                {formatRate(offlineRate)}
+              </div>
+            </div>
+            <div>
+              <div className="text-muted-foreground">농장 수</div>
+              <div className="text-lg font-semibold">{baseItems.length}</div>
+            </div>
+          </div>
+        </div>
+        <FarmSummaryFilters
+          onSearchChange={setSearch}
+          onSortChange={handleSortChange}
+        />
+        <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-3">
+          <span>컬럼 표시</span>
+          {(
+            [
+              ["totalRooms", "총 방"],
+              ["normal", "정상"],
+              ["warn", "경고"],
+              ["danger", "위험"],
+              ["offline", "오프라인"],
+              ["freshness", "최신성"],
+              ["lastUpdated", "마지막 업데이트"],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="inline-flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={visibleColumns[key]}
+                onChange={() =>
+                  setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }))
+                }
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <div className="space-y-3 mb-4">
+          <OfflineBanner
+            lastUpdatedAtKst={lastUpdatedAtKst}
+            totalOffline={totalOffline}
+            totalRooms={totalRooms}
+          />
+        </div>
+        <KpiCards
+          normal={totalNormal}
+          warn={totalWarn}
+          danger={totalDanger}
+          offline={totalOffline}
+        />
+        <StatusPieChart
+          title="상태 분포"
+          data={statusPieData}
+          selectedIds={statusFilter}
+          onSelect={(id) => handleStatusSelect(id as StatusKey)}
+        />
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              setStatusFilter(["normal", "warn", "danger", "offline"])
+            }
+          >
+            전체 선택
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setStatusFilter([])}
+          >
+            전체 해제
+          </Button>
+          {statusMeta.map((s) => (
+            <Button
+              key={s.id}
+              size="sm"
+              variant={statusFilter.includes(s.id) ? "default" : "outline"}
+              onClick={() => handleStatusSelect(s.id)}
+            >
+              {s.label} {s.count}
+            </Button>
+          ))}
+        </div>
+        {(statusFilter.length > 0 ||
+          debouncedSearch ||
+          sortBy !== "registNo") && (
+          <div className="sticky top-10 z-20 -mx-4 px-4 py-2 mb-4 bg-gray-50/95 backdrop-blur border-b">
+            <div className="flex flex-wrap items-center gap-2">
+              {statusFilter.length > 0 &&
+                statusFilter.map((status) => (
+                  <Badge
+                    key={status}
+                    variant="outline"
+                    className="flex items-center gap-1"
+                  >
+                    <Filter className="h-3.5 w-3.5" />
+                    {statusLabel[status] ?? status}
+                  </Badge>
+                ))}
+              {debouncedSearch && (
+                <Badge variant="outline">검색: {debouncedSearch}</Badge>
+              )}
+              {sortBy !== "registNo" && (
+              <Badge variant="outline">
+                정렬: {sortLabel[sortBy] ?? sortBy}
+                {sortDir === "asc" ? " ↑" : " ↓"}
+              </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStatusFilter([]);
+                  setSearch("");
+                  setSortBy("registNo");
+                setSortDir("asc");
+                }}
+              >
+                필터 초기화
+              </Button>
+            </div>
+          </div>
+        )}
+        {filteredItems.length === 0 ? (
+          <EmptyState
+            title={
+              debouncedSearch || statusFilter.length > 0
+                ? "조건에 맞는 농장이 없습니다"
+                : "표시할 농장이 없습니다"
+            }
+            description={
+              debouncedSearch || statusFilter.length > 0
+                ? "필터를 해제하거나 다른 조건을 선택해 보세요."
+                : "현재 표시할 농장 데이터가 없습니다."
+            }
+            icon={
+              debouncedSearch || statusFilter.length > 0 ? (
+                <SearchX className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <Inbox className="h-5 w-5 text-muted-foreground" />
+              )
+            }
+            actionLabel={search ? "필터 초기화" : undefined}
+            onAction={
+              search
+                ? () => {
+                    setSearch("");
+                    setStatusFilter([]);
+                    setSortBy("registNo");
+                  }
+                : undefined
+            }
+          />
+        ) : (
+          <>
+            <div className="sm:hidden">
+              <FarmSummaryCards
+                items={filteredItems}
+                onSelect={(registNo) => router.push(`/farms/${registNo}`)}
+                highlightRegistNos={highlighted}
+              />
+            </div>
+            <div className="hidden sm:block">
+              <FarmSummaryTable
+                items={filteredItems}
+                sortBy={sortBy}
+                sortDir={sortDir}
+                onSortChange={handleSortChange}
+                highlightRegistNos={highlighted}
+                visibleColumns={visibleColumns}
+              />
+            </div>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
