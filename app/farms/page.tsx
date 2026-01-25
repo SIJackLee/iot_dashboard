@@ -5,7 +5,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Filter, Inbox, SearchX } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Filter, Inbox, SearchX } from "lucide-react";
 import TopBar from "@/components/shell/TopBar";
 import FarmSummaryTable from "@/components/farms/FarmSummaryTable";
 import FarmSummaryFilters from "@/components/farms/FarmSummaryFilters";
@@ -43,6 +43,7 @@ export default function FarmsPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   type StatusKey = "normal" | "warn" | "danger" | "offline";
   const [statusFilter, setStatusFilter] = useState<StatusKey[]>([]);
+  const [page, setPage] = useState(1);
   const [highlighted, setHighlighted] = useState<Set<string>>(new Set());
   const prevSnapshotRef = useRef<Map<string, string>>(new Map());
   const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -128,6 +129,23 @@ export default function FarmsPage() {
       prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
     );
   };
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, sortBy, sortDir, statusFilter.join(",")]);
+
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filteredItems.length);
+  const pagedItems = filteredItems.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    if (page !== currentPage) {
+      setPage(currentPage);
+    }
+  }, [page, currentPage]);
 
   useEffect(() => {
     if (!data) return;
@@ -476,16 +494,44 @@ export default function FarmsPage() {
           />
         ) : (
           <>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+              <div className="text-xs text-muted-foreground">
+                {startIndex + 1}-{endIndex} / {filteredItems.length} 표시
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage <= 1}
+                  aria-label="이전 10개"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage >= totalPages}
+                  aria-label="다음 10개"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
             <div className="sm:hidden">
               <FarmSummaryCards
-                items={filteredItems}
+                items={pagedItems}
                 onSelect={(registNo) => router.push(`/farms/${registNo}`)}
                 highlightRegistNos={highlighted}
               />
             </div>
             <div className="hidden sm:block">
               <FarmSummaryTable
-                items={filteredItems}
+                items={pagedItems}
                 sortBy={sortBy}
                 sortDir={sortDir}
                 onSortChange={handleSortChange}
