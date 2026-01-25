@@ -13,12 +13,17 @@ import RoomGrid from "@/components/rooms/RoomGrid";
 import RoomDetailDrawer from "@/components/rooms/RoomDetailDrawer";
 import KpiCards from "@/components/farms/KpiCards";
 import AlertsPanel from "@/components/farms/AlertsPanel";
-import StatusPieChart from "@/components/charts/StatusPieChart";
+import dynamic from "next/dynamic";
 import EmptyState from "@/components/common/EmptyState";
 import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
 import RoomGridSkeleton from "@/components/skeletons/RoomGridSkeleton";
 import { Badge } from "@/components/ui/badge";
 import type { FarmDetailDTO, RoomSnapshotFullDTO } from "@/types/dto";
+
+const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
+  ssr: false,
+  loading: () => <div className="h-[260px] min-h-[260px] w-full" />,
+});
 
 async function fetchFarmDetail(
   registNo: string,

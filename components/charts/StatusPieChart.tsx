@@ -42,7 +42,7 @@ export default function StatusPieChart({
       </CardHeader>
       <CardContent>
         {hasData ? (
-          <div className="h-[260px] w-full">
+          <div className="h-[260px] min-h-[260px] w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

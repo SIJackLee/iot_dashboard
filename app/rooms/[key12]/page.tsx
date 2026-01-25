@@ -12,11 +12,16 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TopBar from "@/components/shell/TopBar";
 import SensorsPanel from "@/components/rooms/SensorsPanel";
 import MotorsPanel from "@/components/rooms/MotorsPanel";
-import RoomTrendChart from "@/components/charts/RoomTrendChart";
+import dynamic from "next/dynamic";
 import EmptyState from "@/components/common/EmptyState";
 import RoomDetailSkeleton from "@/components/skeletons/RoomDetailSkeleton";
 import type { RoomSnapshotFullDTO, RoomLogsResponseDTO } from "@/types/dto";
 import { roomLabel, stallLabel, FARM_LABEL } from "@/lib/labels";
+
+const RoomTrendChart = dynamic(() => import("@/components/charts/RoomTrendChart"), {
+  ssr: false,
+  loading: () => <div className="h-[300px] min-h-[300px] w-full" />,
+});
 
 async function fetchRoomFull(key12: string): Promise<RoomSnapshotFullDTO> {
   const res = await fetch(`/api/rooms/${key12}`);

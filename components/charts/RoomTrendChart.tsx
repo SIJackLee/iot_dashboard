@@ -75,26 +75,28 @@ export default function RoomTrendChart({
           );
         })}
       </div>
-      <ResponsiveContainer width="100%" height={height}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="time" />
-          <YAxis />
-          <Tooltip />
-          {!hiddenKeys.has("ES01") && (
-            <Line type="monotone" dataKey="ES01" stroke="#8884d8" />
-          )}
-          {!hiddenKeys.has("ES02") && (
-            <Line type="monotone" dataKey="ES02" stroke="#82ca9d" />
-          )}
-          {!hiddenKeys.has("ES03") && (
-            <Line type="monotone" dataKey="ES03" stroke="#ffc658" />
-          )}
-          {!hiddenKeys.has("EC01") && (
-            <Line type="monotone" dataKey="EC01" stroke="#ff7300" />
-          )}
-        </LineChart>
-      </ResponsiveContainer>
+      <div className="min-h-[200px]" style={{ height, minHeight: height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="time" />
+            <YAxis />
+            <Tooltip />
+            {!hiddenKeys.has("ES01") && (
+              <Line type="monotone" dataKey="ES01" stroke="#8884d8" />
+            )}
+            {!hiddenKeys.has("ES02") && (
+              <Line type="monotone" dataKey="ES02" stroke="#82ca9d" />
+            )}
+            {!hiddenKeys.has("ES03") && (
+              <Line type="monotone" dataKey="ES03" stroke="#ffc658" />
+            )}
+            {!hiddenKeys.has("EC01") && (
+              <Line type="monotone" dataKey="EC01" stroke="#ff7300" />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

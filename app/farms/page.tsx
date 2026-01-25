@@ -11,7 +11,7 @@ import FarmSummaryTable from "@/components/farms/FarmSummaryTable";
 import FarmSummaryFilters from "@/components/farms/FarmSummaryFilters";
 import KpiCards from "@/components/farms/KpiCards";
 import OfflineBanner from "@/components/farms/OfflineBanner";
-import StatusPieChart from "@/components/charts/StatusPieChart";
+import dynamic from "next/dynamic";
 import FarmSummaryCards from "@/components/farms/FarmSummaryCards";
 import EmptyState from "@/components/common/EmptyState";
 import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
@@ -21,6 +21,11 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FarmsSummaryResponseDTO } from "@/types/dto";
+
+const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
+  ssr: false,
+  loading: () => <div className="h-[260px] min-h-[260px] w-full" />,
+});
 
 async function fetchFarmsSummary(): Promise<FarmsSummaryResponseDTO> {
   const res = await fetch("/api/farms/summary");
