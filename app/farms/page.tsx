@@ -7,11 +7,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight, Filter, Inbox, SearchX } from "lucide-react";
 import TopBar from "@/components/shell/TopBar";
-import FarmSummaryTable from "@/components/farms/FarmSummaryTable";
-import FarmSummaryFilters from "@/components/farms/FarmSummaryFilters";
-import KpiCards from "@/components/farms/KpiCards";
-import OfflineBanner from "@/components/farms/OfflineBanner";
 import dynamic from "next/dynamic";
+import FarmSummaryTable from "@/components/farms/FarmSummaryTable";
 import FarmSummaryCards from "@/components/farms/FarmSummaryCards";
 import EmptyState from "@/components/common/EmptyState";
 import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
@@ -25,6 +22,21 @@ import type { FarmsSummaryResponseDTO } from "@/types/dto";
 const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
   ssr: false,
   loading: () => <div className="h-[260px] min-h-[260px] w-full" />,
+});
+const FarmSummaryFilters = dynamic(
+  () => import("@/components/farms/FarmSummaryFilters"),
+  {
+    ssr: false,
+    loading: () => <div className="h-12 w-full" />,
+  }
+);
+const KpiCards = dynamic(() => import("@/components/farms/KpiCards"), {
+  ssr: false,
+  loading: () => <KpiCardsSkeleton />,
+});
+const OfflineBanner = dynamic(() => import("@/components/farms/OfflineBanner"), {
+  ssr: false,
+  loading: () => <div className="h-16 w-full" />,
 });
 
 async function fetchFarmsSummary(): Promise<FarmsSummaryResponseDTO> {
@@ -346,122 +358,6 @@ export default function FarmsPage() {
             </div>
           </div>
         </div>
-        <FarmSummaryFilters
-          onSearchChange={setSearch}
-          onSortChange={handleSortChange}
-        />
-        <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-3">
-          <span>컬럼 표시</span>
-          {(
-            [
-              ["totalRooms", "총 방"],
-              ["normal", "정상"],
-              ["warn", "경고"],
-              ["danger", "위험"],
-              ["offline", "오프라인"],
-              ["freshness", "최신성"],
-              ["lastUpdated", "마지막 업데이트"],
-            ] as const
-          ).map(([key, label]) => (
-            <label key={key} className="inline-flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={visibleColumns[key]}
-                onChange={() =>
-                  setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }))
-                }
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-        <div className="space-y-3 mb-4">
-          <OfflineBanner
-            lastUpdatedAtKst={lastUpdatedAtKst}
-            totalOffline={totalOffline}
-            totalRooms={totalRooms}
-          />
-        </div>
-        <KpiCards
-          normal={totalNormal}
-          warn={totalWarn}
-          danger={totalDanger}
-          offline={totalOffline}
-        />
-        <StatusPieChart
-          title="상태 분포"
-          data={statusPieData}
-          selectedIds={statusFilter}
-          onSelect={(id) => handleStatusSelect(id as StatusKey)}
-        />
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              setStatusFilter(["normal", "warn", "danger", "offline"])
-            }
-          >
-            전체 선택
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setStatusFilter([])}
-          >
-            전체 해제
-          </Button>
-          {statusMeta.map((s) => (
-            <Button
-              key={s.id}
-              size="sm"
-              variant={statusFilter.includes(s.id) ? "default" : "outline"}
-              onClick={() => handleStatusSelect(s.id)}
-            >
-              {s.label} {s.count}
-            </Button>
-          ))}
-        </div>
-        {(statusFilter.length > 0 ||
-          debouncedSearch ||
-          sortBy !== "registNo") && (
-          <div className="sticky top-10 z-20 -mx-4 px-4 py-2 mb-4 bg-gray-50/95 backdrop-blur border-b">
-            <div className="flex flex-wrap items-center gap-2">
-              {statusFilter.length > 0 &&
-                statusFilter.map((status) => (
-                  <Badge
-                    key={status}
-                    variant="outline"
-                    className="flex items-center gap-1"
-                  >
-                    <Filter className="h-3.5 w-3.5" />
-                    {statusLabel[status] ?? status}
-                  </Badge>
-                ))}
-              {debouncedSearch && (
-                <Badge variant="outline">검색: {debouncedSearch}</Badge>
-              )}
-              {sortBy !== "registNo" && (
-              <Badge variant="outline">
-                정렬: {sortLabel[sortBy] ?? sortBy}
-                {sortDir === "asc" ? " ↑" : " ↓"}
-              </Badge>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setStatusFilter([]);
-                  setSearch("");
-                  setSortBy("registNo");
-                setSortDir("asc");
-                }}
-              >
-                필터 초기화
-              </Button>
-            </div>
-          </div>
-        )}
         {filteredItems.length === 0 ? (
           <EmptyState
             title={
@@ -538,6 +434,125 @@ export default function FarmsPage() {
                 highlightRegistNos={highlighted}
                 visibleColumns={visibleColumns}
               />
+            </div>
+            <div className="mt-6 space-y-4">
+              <FarmSummaryFilters
+                onSearchChange={setSearch}
+                onSortChange={handleSortChange}
+              />
+              <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <span>컬럼 표시</span>
+                {(
+                  [
+                    ["totalRooms", "총 방"],
+                    ["normal", "정상"],
+                    ["warn", "경고"],
+                    ["danger", "위험"],
+                    ["offline", "오프라인"],
+                    ["freshness", "최신성"],
+                    ["lastUpdated", "마지막 업데이트"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <label key={key} className="inline-flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={visibleColumns[key]}
+                      onChange={() =>
+                        setVisibleColumns((prev) => ({
+                          ...prev,
+                          [key]: !prev[key],
+                        }))
+                      }
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+              <OfflineBanner
+                lastUpdatedAtKst={lastUpdatedAtKst}
+                totalOffline={totalOffline}
+                totalRooms={totalRooms}
+              />
+              <KpiCards
+                normal={totalNormal}
+                warn={totalWarn}
+                danger={totalDanger}
+                offline={totalOffline}
+              />
+              <StatusPieChart
+                title="상태 분포"
+                data={statusPieData}
+                selectedIds={statusFilter}
+                onSelect={(id) => handleStatusSelect(id as StatusKey)}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setStatusFilter(["normal", "warn", "danger", "offline"])
+                  }
+                >
+                  전체 선택
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setStatusFilter([])}
+                >
+                  전체 해제
+                </Button>
+                {statusMeta.map((s) => (
+                  <Button
+                    key={s.id}
+                    size="sm"
+                    variant={statusFilter.includes(s.id) ? "default" : "outline"}
+                    onClick={() => handleStatusSelect(s.id)}
+                  >
+                    {s.label} {s.count}
+                  </Button>
+                ))}
+              </div>
+              {(statusFilter.length > 0 ||
+                debouncedSearch ||
+                sortBy !== "registNo") && (
+                <div className="sticky top-10 z-20 -mx-4 px-4 py-2 bg-gray-50/95 backdrop-blur border-b">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {statusFilter.length > 0 &&
+                      statusFilter.map((status) => (
+                        <Badge
+                          key={status}
+                          variant="outline"
+                          className="flex items-center gap-1"
+                        >
+                          <Filter className="h-3.5 w-3.5" />
+                          {statusLabel[status] ?? status}
+                        </Badge>
+                      ))}
+                    {debouncedSearch && (
+                      <Badge variant="outline">검색: {debouncedSearch}</Badge>
+                    )}
+                    {sortBy !== "registNo" && (
+                      <Badge variant="outline">
+                        정렬: {sortLabel[sortBy] ?? sortBy}
+                        {sortDir === "asc" ? " ↑" : " ↓"}
+                      </Badge>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setStatusFilter([]);
+                        setSearch("");
+                        setSortBy("registNo");
+                        setSortDir("asc");
+                      }}
+                    >
+                      필터 초기화
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}
