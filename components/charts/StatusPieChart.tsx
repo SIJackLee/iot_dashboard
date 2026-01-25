@@ -42,8 +42,14 @@ export default function StatusPieChart({
       </CardHeader>
       <CardContent>
         {hasData ? (
-          <div className="h-[260px] min-h-[260px] w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-[260px] w-full min-w-0">
+            <ResponsiveContainer
+              width="100%"
+              height={260}
+              minHeight={260}
+              minWidth={200}
+              debounce={50}
+            >
               <PieChart>
                 <Pie
                   data={data}

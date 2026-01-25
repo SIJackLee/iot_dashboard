@@ -75,8 +75,14 @@ export default function RoomTrendChart({
           );
         })}
       </div>
-      <div className="min-h-[200px]" style={{ height, minHeight: height }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="w-full" style={{ height, minHeight: height }}>
+        <ResponsiveContainer
+          width="100%"
+          height={height}
+          minHeight={200}
+          minWidth={200}
+          debounce={50}
+        >
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
