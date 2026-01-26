@@ -107,9 +107,11 @@ export async function GET(request: Request) {
           all.push(...results.flat());
         }
       } else {
-        // limit이 없을 때: 전체 조회 (페이지 크기 증가로 쿼리 수 감소)
-        const pageLimit = 2000; // 1000 → 2000으로 증가
+        // limit이 없을 때: 전체 조회 (Supabase 기본 limit 1000개 고려)
+        const pageLimit = 1000; // Supabase 최대 limit
         let offset = 0;
+        let pageCount = 0;
+        
         while (true) {
           const page = await supabaseSelect<typeof all[number]>(
             "eqpmn_mapping_set_v3",
@@ -121,9 +123,23 @@ export async function GET(request: Request) {
               offset,
             }
           );
+          
+          pageCount++;
           all.push(...page);
-          if (page.length < pageLimit) break;
+          
+          // 페이지가 limit보다 적으면 마지막 페이지
+          if (page.length < pageLimit) {
+            break;
+          }
+          
+          // 다음 페이지로 이동
           offset += pageLimit;
+          
+          // 무한 루프 방지 (최대 100페이지 = 100,000개 row)
+          if (pageCount >= 100) {
+            console.warn(`[farms/summary] Reached maximum page limit (100 pages)`);
+            break;
+          }
         }
       }
       return all;
@@ -187,6 +203,11 @@ export async function GET(request: Request) {
     
     // 전체 농장 수 계산 (farmMap의 크기 = 실제 반환되는 items의 개수)
     const totalCount = farmMap.size;
+    
+    // 디버깅: 실제 조회된 데이터 확인
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[farms/summary] Total mapping rows: ${mappingRows.length}, Unique farms: ${totalCount}`);
+    }
 
     const now = new Date();
     const nowKst = serverNowKst();
