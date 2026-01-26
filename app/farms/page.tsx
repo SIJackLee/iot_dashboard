@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FarmsSummaryResponseDTO } from "@/types/dto";
-import AlertsHistoryPanel from "@/components/farms/AlertsHistoryPanel";
 
 const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
   ssr: false,
@@ -39,6 +38,13 @@ const OfflineBanner = dynamic(() => import("@/components/farms/OfflineBanner"), 
   ssr: false,
   loading: () => <div className="h-16 w-full" />,
 });
+const AlertsHistoryPanel = dynamic(
+  () => import("@/components/farms/AlertsHistoryPanel"),
+  {
+    ssr: false,
+    loading: () => <div className="h-40 w-full" />,
+  }
+);
 
 async function fetchFarmsSummary(): Promise<FarmsSummaryResponseDTO> {
   const res = await fetch("/api/farms/summary");
@@ -56,6 +62,7 @@ export default function FarmsPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   type StatusKey = "normal" | "warn" | "danger" | "offline";
   const [statusFilter, setStatusFilter] = useState<StatusKey[]>([]);
+  const [showDeferred, setShowDeferred] = useState(false);
   const [page, setPage] = useState(1);
   const [highlighted, setHighlighted] = useState<Set<string>>(new Set());
   const prevSnapshotRef = useRef<Map<string, string>>(new Map());
@@ -83,6 +90,19 @@ export default function FarmsPage() {
     const timer = setTimeout(() => setDebouncedSearch(search), 250);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const schedule = (window as any).requestIdleCallback || window.setTimeout;
+    const cancel = (window as any).cancelIdleCallback || window.clearTimeout;
+    const handle = schedule(() => {
+      if (!cancelled) setShowDeferred(true);
+    }, 200);
+    return () => {
+      cancelled = true;
+      cancel(handle);
+    };
+  }, []);
 
   // 필터링 및 정렬 (데이터가 있을 때만)
   const baseItems = data
@@ -467,20 +487,6 @@ export default function FarmsPage() {
             </div>
           </div>
         </div>
-        <div className="space-y-3 mb-4">
-          <OfflineBanner
-            lastUpdatedAtKst={lastUpdatedAtKst}
-            totalOffline={totalOffline}
-            totalRooms={totalRooms}
-          />
-        </div>
-        <KpiCards
-          normal={totalNormal}
-          warn={totalWarn}
-          danger={totalDanger}
-          offline={totalOffline}
-        />
-        <AlertsHistoryPanel />
         {filteredItems.length === 0 ? (
           <EmptyState
             title={
@@ -559,6 +565,130 @@ export default function FarmsPage() {
               />
             </div>
           </>
+        )}
+        {showDeferred && (
+          <div className="mt-6 space-y-4">
+            <FarmSummaryFilters
+              onSearchChange={setSearch}
+              onSortChange={handleSortChange}
+            />
+            <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+              <span>컬럼 표시</span>
+              {(
+                [
+                  ["totalRooms", "총 방"],
+                  ["normal", "정상"],
+                  ["warn", "경고"],
+                  ["danger", "위험"],
+                  ["offline", "오프라인"],
+                  ["freshness", "최신성"],
+                  ["lastUpdated", "마지막 업데이트"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="inline-flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns[key]}
+                    onChange={() =>
+                      setVisibleColumns((prev) => ({
+                        ...prev,
+                        [key]: !prev[key],
+                      }))
+                    }
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <OfflineBanner
+                lastUpdatedAtKst={lastUpdatedAtKst}
+                totalOffline={totalOffline}
+                totalRooms={totalRooms}
+              />
+            </div>
+            <KpiCards
+              normal={totalNormal}
+              warn={totalWarn}
+              danger={totalDanger}
+              offline={totalOffline}
+            />
+            <StatusPieChart
+              title="상태 분포"
+              data={statusPieData}
+              selectedIds={statusFilter}
+              onSelect={(id) => handleStatusSelect(id as StatusKey)}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  setStatusFilter(["normal", "warn", "danger", "offline"])
+                }
+              >
+                전체 선택
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setStatusFilter([])}
+              >
+                전체 해제
+              </Button>
+              {statusMeta.map((s) => (
+                <Button
+                  key={s.id}
+                  size="sm"
+                  variant={statusFilter.includes(s.id) ? "default" : "outline"}
+                  onClick={() => handleStatusSelect(s.id)}
+                >
+                  {s.label} {s.count}
+                </Button>
+              ))}
+            </div>
+            {(statusFilter.length > 0 ||
+              debouncedSearch ||
+              sortBy !== "registNo") && (
+              <div className="sticky top-10 z-20 -mx-4 px-4 py-2 bg-gray-50/95 backdrop-blur border-b">
+                <div className="flex flex-wrap items-center gap-2">
+                  {statusFilter.length > 0 &&
+                    statusFilter.map((status) => (
+                      <Badge
+                        key={status}
+                        variant="outline"
+                        className="flex items-center gap-1"
+                      >
+                        <Filter className="h-3.5 w-3.5" />
+                        {statusLabel[status] ?? status}
+                      </Badge>
+                    ))}
+                  {debouncedSearch && (
+                    <Badge variant="outline">검색: {debouncedSearch}</Badge>
+                  )}
+                  {sortBy !== "registNo" && (
+                    <Badge variant="outline">
+                      정렬: {sortLabel[sortBy] ?? sortBy}
+                      {sortDir === "asc" ? " ↑" : " ↓"}
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setStatusFilter([]);
+                      setSearch("");
+                      setSortBy("registNo");
+                      setSortDir("asc");
+                    }}
+                  >
+                    필터 초기화
+                  </Button>
+                </div>
+              </div>
+            )}
+            <AlertsHistoryPanel />
+          </div>
         )}
       </main>
     </div>

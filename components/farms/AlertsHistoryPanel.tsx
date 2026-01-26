@@ -2,9 +2,10 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Clock } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -57,12 +58,14 @@ async function fetchHistory(range: string, states: string[]) {
 }
 
 export default function AlertsHistoryPanel() {
+  const router = useRouter();
   const [range, setRange] = useState<(typeof rangeOptions)[number]["id"]>("6h");
   const [selectedStates, setSelectedStates] = useState<string[]>([
     "warn",
     "danger",
     "offline",
   ]);
+  const [page, setPage] = useState(1);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["alerts-history", range, selectedStates],
@@ -71,6 +74,22 @@ export default function AlertsHistoryPanel() {
   });
 
   const items = data?.items ?? [];
+  const pageSize = 10;
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, items.length);
+  const pagedItems = items.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setPage(1);
+  }, [range, selectedStates.join(",")]);
+
+  useEffect(() => {
+    if (page !== currentPage) {
+      setPage(currentPage);
+    }
+  }, [page, currentPage]);
   const badgeVariant = (state: string) => {
     if (state === "danger") return "destructive";
     return "outline";
@@ -140,10 +159,48 @@ export default function AlertsHistoryPanel() {
           />
         ) : (
           <div className="space-y-2">
-            {items.map((item) => (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-xs text-muted-foreground">
+                {startIndex + 1}-{endIndex} / {items.length} 표시
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage <= 1}
+                  aria-label="이전 10개"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage >= totalPages}
+                  aria-label="다음 10개"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            {pagedItems.map((item) => (
               <div
                 key={`${item.key12}-${item.occurredAtKst}`}
-                className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between cursor-pointer hover:bg-gray-50"
+                onClick={() => router.push(`/rooms/${item.key12}`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    router.push(`/rooms/${item.key12}`);
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`${FARM_LABEL} ${item.registNo} ${roomLabel(item.roomNo)} 상세 이동`}
               >
                 <div className="flex items-center gap-3">
                   <Badge variant={badgeVariant(item.state)}>
