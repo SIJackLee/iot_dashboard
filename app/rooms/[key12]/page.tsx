@@ -53,7 +53,7 @@ export default function RoomDetailPage() {
   const router = useRouter();
   const params = useParams();
   const key12 = params.key12 as string;
-  const [timeRange, setTimeRange] = useState<"1h" | "24h" | null>(null);
+  const [timeRange, setTimeRange] = useState<"1h" | "24h" | "none">("none");
   const [logItems, setLogItems] = useState<RoomLogsResponseDTO["items"]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -69,7 +69,7 @@ export default function RoomDetailPage() {
   const { data: logsData, isLoading: logsLoading, error: logsError } = useQuery({
     queryKey: ["room-logs", key12, timeRange],
     queryFn: () => {
-      if (!timeRange) return null;
+      if (timeRange === "none") return null;
       const now = new Date();
       const from = new Date(now);
       if (timeRange === "1h") {
@@ -79,11 +79,11 @@ export default function RoomDetailPage() {
       }
       return fetchRoomLogs(key12, from.toISOString(), now.toISOString());
     },
-    enabled: timeRange !== null,
+    enabled: timeRange !== "none",
   });
 
   useEffect(() => {
-    if (!timeRange) {
+    if (timeRange === "none") {
       setLogItems([]);
       setNextCursor(undefined);
       setLastLogsLoadedAt(null);
@@ -97,7 +97,7 @@ export default function RoomDetailPage() {
   }, [logsData, timeRange]);
 
   const handleLoadMore = async () => {
-    if (!timeRange || !nextCursor || isLoadingMore) return;
+    if (timeRange === "none" || !nextCursor || isLoadingMore) return;
     setIsLoadingMore(true);
     try {
       const now = new Date();
@@ -221,8 +221,8 @@ export default function RoomDetailPage() {
           </CardHeader>
           <CardContent>
             <Tabs
-              value={timeRange || undefined}
-              onValueChange={(value) => setTimeRange(value as "1h" | "24h" | null)}
+              value={timeRange}
+              onValueChange={(value) => setTimeRange(value as "1h" | "24h" | "none")}
               className="mb-4"
             >
               <TabsList>
@@ -255,12 +255,12 @@ export default function RoomDetailPage() {
                 <RoomTrendChart logs={logItems} />
               </div>
             )}
-            {!timeRange && (
+            {timeRange === "none" && (
               <div className="text-center text-gray-500 py-8">
                 시간 범위를 선택하여 로그 데이터를 확인하세요.
               </div>
             )}
-            {timeRange && logItems.length > 0 && (
+            {timeRange !== "none" && logItems.length > 0 && (
               <div className="mt-4 space-y-2">
                 <div className="text-xs text-muted-foreground flex items-center justify-between">
                   <span>표시 중: {logItems.length}건</span>
