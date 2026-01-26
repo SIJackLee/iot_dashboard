@@ -130,33 +130,17 @@ export async function GET(request: Request) {
       return all;
     };
 
-    // 전체 농장 수 계산 (limit과 무관)
-    const getAllFarmCount = async (): Promise<number> => {
-      const allFarms = await supabaseSelect<{ isind_regist_no: string }>(
-        "eqpmn_mapping_set_v3",
-        {
-          select: "isind_regist_no",
-          order: "isind_regist_no",
-        }
-      );
-      const uniqueFarms = Array.from(
-        new Set(allFarms.map((f) => f.isind_regist_no))
-      );
-      return uniqueFarms.length;
-    };
-
-    // mapping rows 조회 (limit 적용)
-    const mappingRows = await fetchMappings(limit);
+    // mapping rows 조회 (limit 없이 전체 조회)
+    const mappingRows = await fetchMappings(undefined); // 항상 전체 조회
     
-    // 전체 농장 수 계산 (병렬로 처리하여 성능 최적화)
-    const totalCountPromise = getAllFarmCount();
+    // 전체 농장 수는 farmMap에서 계산 (실제 반환되는 items와 일치)
+    // mapping rows 조회 후 farm별로 그룹화하여 계산
 
     if (mappingRows.length === 0) {
-      const totalCount = await totalCountPromise;
       return NextResponse.json({
         serverNowKst: serverNowKst(),
         items: [],
-        totalCount,
+        totalCount: 0,
       } as FarmsSummaryResponseDTO);
     }
 
@@ -201,6 +185,9 @@ export async function GET(request: Request) {
       }
       farmMap.get(registNo)!.push(mapping);
     }
+    
+    // 전체 농장 수 계산 (farmMap의 크기 = 실제 반환되는 items의 개수)
+    const totalCount = farmMap.size;
 
     const now = new Date();
     const nowKst = serverNowKst();
@@ -302,20 +289,17 @@ export async function GET(request: Request) {
       });
     }
 
-    // 전체 농장 수 가져오기
-    const totalCount = await totalCountPromise;
-    
     const responseData: FarmsSummaryResponseDTO = {
       serverNowKst: nowKst,
       items,
-      totalCount,
+      totalCount, // farmMap.size = 실제 반환되는 전체 농장 수
     };
     summaryCache = {
       data: responseData,
       expiresAt: Date.now() + SUMMARY_CACHE_TTL_MS,
     };
     
-    // limit이 지정된 경우 해당 개수만 반환
+    // limit이 지정된 경우 해당 개수만 반환 (하지만 totalCount는 전체 개수 유지)
     const finalItems = limit !== undefined && limit > 0 
       ? items.slice(0, limit)
       : items;
