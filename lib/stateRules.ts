@@ -5,11 +5,11 @@ import type { RoomState, IntArray } from "@/types/dto";
 // 센서별 임계값 (placeholder, 추후 교체 가능)
 // 단위 주의: ES01/02/04/09는 x10 스케일
 const SENSOR_THRESHOLDS = {
-  es01: { warn: 300, danger: 350 }, // 온도 30.0C / 35.0C
-  es02: { warn: 800, danger: 900 }, // 습도 80% / 90%
-  es03: { warn: 2500, danger: 3700 }, // CO2 ppm
-  es04: { warn: 200, danger: 300 }, // NH3 20ppm / 30ppm (x10)
-  es09: { warn: 600, danger: 800 }, // 음압 60Pa / 80Pa (x10)
+  es01: { warn: 280, danger: 320 }, // 온도 28.0C / 32.0C
+  es02: { warn: 650, danger: 750 }, // 습도 65% / 75%
+  es03: { warn: 2300, danger: 2600 }, // CO2 ppm
+  es04: { warn: 230, danger: 280 }, // NH3 23ppm / 28ppm (x10)
+  es09: { warn: 380, danger: 450 }, // 음압 38Pa / 45Pa (x10)
 };
 
 interface SnapshotData {
