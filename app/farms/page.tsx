@@ -18,29 +18,13 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FarmsSummaryResponseDTO } from "@/types/dto";
+import FarmOverviewHeader from "@/components/farms/FarmOverviewHeader";
+import AlertsTogglePanel from "@/components/farms/AlertsTogglePanel";
 
-const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
-  ssr: false,
-  loading: () => <div className="h-[260px] min-h-[260px] w-full" />,
-});
-const FarmSummaryFilters = dynamic(
-  () => import("@/components/farms/FarmSummaryFilters"),
-  {
-    ssr: false,
-    loading: () => <div className="h-12 w-full" />,
-  }
-);
 const OfflineBanner = dynamic(() => import("@/components/farms/OfflineBanner"), {
   ssr: false,
   loading: () => <div className="h-16 w-full" />,
 });
-const AlertsHistoryPanel = dynamic(
-  () => import("@/components/farms/AlertsHistoryPanel"),
-  {
-    ssr: false,
-    loading: () => <div className="h-40 w-full" />,
-  }
-);
 
 async function fetchFarmsSummary(): Promise<FarmsSummaryResponseDTO> {
   const res = await fetch("/api/farms/summary");
@@ -220,7 +204,6 @@ export default function FarmsPage() {
   const totalRooms = baseItems.reduce((sum, item) => sum + item.totalRooms, 0);
   const normalRate = totalRooms > 0 ? (totalNormal / totalRooms) * 100 : 0;
   const offlineRate = totalRooms > 0 ? (totalOffline / totalRooms) * 100 : 0;
-  const formatRate = (value: number) => `${value.toFixed(1)}%`;
   
   // 마지막 업데이트 시간 (가장 최신)
   const lastUpdatedAtKst = baseItems.length > 0
@@ -334,55 +317,24 @@ export default function FarmsPage() {
       <TopBar
         summary={
           <>
-            <span>정상률 {formatRate(normalRate)}</span>
-            <span>오프라인율 {formatRate(offlineRate)}</span>
+            <span>정상률 {normalRate.toFixed(1)}%</span>
+            <span>오프라인율 {offlineRate.toFixed(1)}%</span>
             <span>전체 방 {totalRooms}</span>
           </>
         }
       />
       <main className="container mx-auto px-4 py-6">
-        <div className="sticky top-0 z-30 -mx-4 px-4 py-2 mb-2 bg-white/95 backdrop-blur border-b">
-          <div className="text-xs text-muted-foreground">
-            마지막 갱신:{" "}
-            {lastUpdatedAtKst
-              ? new Date(lastUpdatedAtKst).toLocaleString("ko-KR")
-              : "N/A"}
-          </div>
-        </div>
-        <h1 className="text-2xl font-bold mb-6">농장 목록</h1>
-        <div className="bg-white rounded-lg shadow-sm border mb-4 p-4">
-          <div className="text-sm text-muted-foreground mb-2">
-            전체 요약
-            {lastUpdatedAtKst && (
-              <span className="ml-2">
-                마지막 업데이트:{" "}
-                {new Date(lastUpdatedAtKst).toLocaleString("ko-KR")}
-              </span>
-            )}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-            <div>
-              <div className="text-muted-foreground">전체 방</div>
-              <div className="text-lg font-semibold">{totalRooms}</div>
-            </div>
-            <div>
-              <div className="text-muted-foreground">정상률</div>
-              <div className="text-lg font-semibold text-green-600">
-                {formatRate(normalRate)}
-              </div>
-            </div>
-            <div>
-              <div className="text-muted-foreground">오프라인율</div>
-              <div className="text-lg font-semibold text-gray-600">
-                {formatRate(offlineRate)}
-              </div>
-            </div>
-            <div>
-              <div className="text-muted-foreground">농장 수</div>
-              <div className="text-lg font-semibold">{baseItems.length}</div>
-            </div>
-          </div>
-        </div>
+        <FarmOverviewHeader
+          lastUpdatedAtKst={lastUpdatedAtKst}
+          title="농장 목록"
+          totalRooms={totalRooms}
+          normalRate={normalRate}
+          offlineRate={offlineRate}
+          farmCount={baseItems.length}
+          statusPieData={statusPieData}
+          statusFilter={statusFilter}
+          onStatusSelect={(id) => handleStatusSelect(id as StatusKey)}
+        />
         {filteredItems.length === 0 ? (
           <EmptyState
             title={
@@ -464,120 +416,45 @@ export default function FarmsPage() {
         )}
         {showDeferred && (
           <div className="mt-6 space-y-4">
-            <FarmSummaryFilters
+            <OfflineBanner
+              lastUpdatedAtKst={lastUpdatedAtKst}
+              totalOffline={totalOffline}
+              totalRooms={totalRooms}
+            />
+            <AlertsTogglePanel
+              registNo={undefined}
+              stateFilter={statusFilter}
+              statusMeta={statusMeta.map((s) => ({
+                id: s.id,
+                label: s.label,
+                count: s.count,
+              }))}
+              onToggleStatus={(id) => handleStatusSelect(id as StatusKey)}
+              onSelectAllStatus={() =>
+                setStatusFilter(["normal", "warn", "danger", "offline"])
+              }
+              onClearStatus={() => setStatusFilter([])}
+              debouncedSearch={debouncedSearch}
+              sortLabel={sortLabel}
+              sortBy={sortBy}
+              sortDir={sortDir}
+              onResetFilters={() => {
+                setStatusFilter([]);
+                setSearch("");
+                setSortBy("registNo");
+                setSortDir("asc");
+              }}
               onSearchChange={setSearch}
               onSortChange={handleSortChange}
+              visibleColumns={visibleColumns}
+              onToggleColumn={(key) =>
+                setVisibleColumns((prev) => ({
+                  ...prev,
+                  [key]: !prev[key as keyof typeof prev],
+                }))
+              }
+              defaultView="history"
             />
-            <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              <span>컬럼 표시</span>
-              {(
-                [
-                  ["totalRooms", "총 방"],
-                  ["normal", "정상"],
-                  ["warn", "경고"],
-                  ["danger", "위험"],
-                  ["offline", "오프라인"],
-                  ["freshness", "최신성"],
-                  ["lastUpdated", "마지막 업데이트"],
-                ] as const
-              ).map(([key, label]) => (
-                <label key={key} className="inline-flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={visibleColumns[key]}
-                    onChange={() =>
-                      setVisibleColumns((prev) => ({
-                        ...prev,
-                        [key]: !prev[key],
-                      }))
-                    }
-                  />
-                  {label}
-                </label>
-              ))}
-            </div>
-            <div className="space-y-3">
-              <OfflineBanner
-                lastUpdatedAtKst={lastUpdatedAtKst}
-                totalOffline={totalOffline}
-                totalRooms={totalRooms}
-              />
-            </div>
-            <StatusPieChart
-              title="상태 분포"
-              data={statusPieData}
-              selectedIds={statusFilter}
-              onSelect={(id) => handleStatusSelect(id as StatusKey)}
-            />
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  setStatusFilter(["normal", "warn", "danger", "offline"])
-                }
-              >
-                전체 선택
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setStatusFilter([])}
-              >
-                전체 해제
-              </Button>
-              {statusMeta.map((s) => (
-                <Button
-                  key={s.id}
-                  size="sm"
-                  variant={statusFilter.includes(s.id) ? "default" : "outline"}
-                  onClick={() => handleStatusSelect(s.id)}
-                >
-                  {s.label} {s.count}
-                </Button>
-              ))}
-            </div>
-            {(statusFilter.length > 0 ||
-              debouncedSearch ||
-              sortBy !== "registNo") && (
-              <div className="sticky top-10 z-20 -mx-4 px-4 py-2 bg-gray-50/95 backdrop-blur border-b">
-                <div className="flex flex-wrap items-center gap-2">
-                  {statusFilter.length > 0 &&
-                    statusFilter.map((status) => (
-                      <Badge
-                        key={status}
-                        variant="outline"
-                        className="flex items-center gap-1"
-                      >
-                        <Filter className="h-3.5 w-3.5" />
-                        {statusLabel[status] ?? status}
-                      </Badge>
-                    ))}
-                  {debouncedSearch && (
-                    <Badge variant="outline">검색: {debouncedSearch}</Badge>
-                  )}
-                  {sortBy !== "registNo" && (
-                    <Badge variant="outline">
-                      정렬: {sortLabel[sortBy] ?? sortBy}
-                      {sortDir === "asc" ? " ↑" : " ↓"}
-                    </Badge>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setStatusFilter([]);
-                      setSearch("");
-                      setSortBy("registNo");
-                      setSortDir("asc");
-                    }}
-                  >
-                    필터 초기화
-                  </Button>
-                </div>
-              </div>
-            )}
-            <AlertsHistoryPanel />
           </div>
         )}
       </main>
