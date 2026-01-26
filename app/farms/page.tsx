@@ -88,25 +88,16 @@ export default function FarmsPage() {
     lastUpdated: true,
   });
 
-  // 초기 로드 시 첫 10개만 가져오기 (로딩 속도 개선)
+  // 초기 로드 시 전체 FARM 조회
   const { data, isLoading, error } = useQuery({
-    queryKey: ["farms-summary", 10],
-    queryFn: () => fetchFarmsSummary(10), // 초기 로드 시 10개만
+    queryKey: ["farms-summary"],
+    queryFn: () => fetchFarmsSummary(), // 전체 데이터 조회
     refetchInterval: 15000, // 15초 폴링
     refetchOnWindowFocus: false,
     retry: 1,
     retryDelay: 2000,
     staleTime: 10000, // 10초간 fresh 상태 유지 (캐시 활용)
     gcTime: 300000, // 5분간 캐시 유지 (React Query v5)
-  });
-  
-  // 전체 데이터를 백그라운드에서 가져오기 (초기 로드 후)
-  const { data: allData } = useQuery({
-    queryKey: ["farms-summary", "all"],
-    queryFn: () => fetchFarmsSummary(), // 전체 데이터
-    enabled: !!data, // 초기 데이터 로드 후 활성화
-    staleTime: 10000,
-    gcTime: 300000,
   });
 
   useEffect(() => {
@@ -158,10 +149,10 @@ export default function FarmsPage() {
     };
   }, [data]);
 
-  // 필터링 및 정렬 (전체 데이터가 있으면 사용, 없으면 초기 10개 사용)
-  const baseItems = (allData?.items || data?.items)
+  // 필터링 및 정렬
+  const baseItems = data?.items
     ? (() => {
-        let items = [...(allData?.items || data?.items || [])];
+        let items = [...(data.items || [])];
         if (debouncedSearch) {
           items = items.filter((item) =>
             item.registNo.toLowerCase().includes(debouncedSearch.toLowerCase())
@@ -222,7 +213,7 @@ export default function FarmsPage() {
   }, [debouncedSearch, sortBy, sortDir, statusFilter.join(",")]);
 
   // 전체 농장 수 (필터/검색이 없을 때는 totalCount 사용)
-  const totalFarmCount = allData?.totalCount ?? data?.totalCount ?? undefined;
+  const totalFarmCount = data?.totalCount ?? undefined;
   const hasActiveFilters = debouncedSearch || statusFilter.length > 0;
   
   // totalItems: 필터/검색이 있으면 filteredItems.length, 없으면 totalCount 사용
@@ -406,7 +397,7 @@ export default function FarmsPage() {
             totalRooms={totalRooms}
             normalRate={normalRate}
             offlineRate={offlineRate}
-            farmCount={allData?.totalCount ?? data?.totalCount ?? baseItems.length}
+            farmCount={data?.totalCount ?? baseItems.length}
             statusPieData={statusPieData}
             statusFilter={statusFilter}
             onStatusSelect={(id) => handleStatusSelect(id as StatusKey)}
