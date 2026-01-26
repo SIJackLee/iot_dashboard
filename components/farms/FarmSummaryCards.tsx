@@ -2,6 +2,7 @@
 
 "use client";
 
+import { memo } from "react";
 import type { FarmSummaryDTO } from "@/types/dto";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ interface FarmSummaryCardsProps {
   highlightRegistNos?: Set<string>;
 }
 
-export default function FarmSummaryCards({
+const FarmSummaryCards = memo(function FarmSummaryCards({
   items,
   onSelect,
   highlightRegistNos,
@@ -107,4 +108,6 @@ export default function FarmSummaryCards({
       })}
     </div>
   );
-}
+});
+
+export default FarmSummaryCards;

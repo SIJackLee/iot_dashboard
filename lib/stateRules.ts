@@ -8,7 +8,7 @@ const SENSOR_THRESHOLDS = {
   es01: { warn: 300, danger: 350 }, // 온도 30.0C / 35.0C
   es02: { warn: 800, danger: 900 }, // 습도 80% / 90%
   es03: { warn: 2500, danger: 3700 }, // CO2 ppm
-  es04: { warn: 100, danger: 200 }, // NH3 10ppm / 20ppm (x10)
+  es04: { warn: 200, danger: 300 }, // NH3 20ppm / 30ppm (x10)
   es09: { warn: 600, danger: 800 }, // 음압 60Pa / 80Pa (x10)
 };
 

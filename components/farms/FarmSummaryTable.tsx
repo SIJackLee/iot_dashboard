@@ -2,6 +2,7 @@
 
 "use client";
 
+import { memo } from "react";
 import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { FarmSummaryDTO } from "@/types/dto";
@@ -24,7 +25,7 @@ interface FarmSummaryTableProps {
   };
 }
 
-export default function FarmSummaryTable({
+const FarmSummaryTable = memo(function FarmSummaryTable({
   items,
   sortBy,
   sortDir,
@@ -215,4 +216,6 @@ export default function FarmSummaryTable({
       </table>
     </div>
   );
-}
+});
+
+export default FarmSummaryTable;

@@ -358,6 +358,19 @@ export default function FarmsPage() {
             </div>
           </div>
         </div>
+        <div className="space-y-3 mb-4">
+          <OfflineBanner
+            lastUpdatedAtKst={lastUpdatedAtKst}
+            totalOffline={totalOffline}
+            totalRooms={totalRooms}
+          />
+        </div>
+        <KpiCards
+          normal={totalNormal}
+          warn={totalWarn}
+          danger={totalDanger}
+          offline={totalOffline}
+        />
         {filteredItems.length === 0 ? (
           <EmptyState
             title={
@@ -468,17 +481,6 @@ export default function FarmsPage() {
                   </label>
                 ))}
               </div>
-              <OfflineBanner
-                lastUpdatedAtKst={lastUpdatedAtKst}
-                totalOffline={totalOffline}
-                totalRooms={totalRooms}
-              />
-              <KpiCards
-                normal={totalNormal}
-                warn={totalWarn}
-                danger={totalDanger}
-                offline={totalOffline}
-              />
               <StatusPieChart
                 title="상태 분포"
                 data={statusPieData}
