@@ -4,6 +4,7 @@
 
 import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { FarmSummaryDTO } from "@/types/dto";
 
 interface PieItem {
@@ -116,21 +117,33 @@ export default function FarmOverviewHeader({
         </div>
       </Card>
       
-      {/* 도넛 차트와 히트맵: PC에서만 표시 */}
+      {/* 도넛 차트와 히트맵: PC에서만 표시, 탭으로 토글 */}
       <div className="hidden sm:block">
         {farms && farms.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <StatusPieChart
-              title="상태 분포"
-              data={statusPieData}
-              selectedIds={statusFilter}
-              onSelect={onStatusSelect}
-            />
-            <FarmHeatmap
-              farms={farms}
-              onFarmClick={onFarmClick}
-            />
-          </div>
+          <Tabs defaultValue="pie" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="pie" className="text-sm sm:text-base">
+                상태 분포
+              </TabsTrigger>
+              <TabsTrigger value="heatmap" className="text-sm sm:text-base">
+                농장 상태 히트맵
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="pie" className="mt-0">
+              <StatusPieChart
+                title="상태 분포"
+                data={statusPieData}
+                selectedIds={statusFilter}
+                onSelect={onStatusSelect}
+              />
+            </TabsContent>
+            <TabsContent value="heatmap" className="mt-0">
+              <FarmHeatmap
+                farms={farms}
+                onFarmClick={onFarmClick}
+              />
+            </TabsContent>
+          </Tabs>
         ) : (
           <StatusPieChart
             title="상태 분포"
