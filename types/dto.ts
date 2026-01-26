@@ -40,6 +40,7 @@ export interface FarmSummaryDTO {
 export interface FarmsSummaryResponseDTO {
   serverNowKst: ISODateTimeKst;
   items: FarmSummaryDTO[];
+  totalCount?: number; // 전체 농장 수 (limit과 무관)
 }
 
 // (5) FarmDetailDTO (Lite)

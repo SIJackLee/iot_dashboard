@@ -397,7 +397,7 @@ export default function FarmsPage() {
             totalRooms={totalRooms}
             normalRate={normalRate}
             offlineRate={offlineRate}
-            farmCount={baseItems.length}
+            farmCount={allData?.totalCount ?? data?.totalCount ?? baseItems.length}
             statusPieData={statusPieData}
             statusFilter={statusFilter}
             onStatusSelect={(id) => handleStatusSelect(id as StatusKey)}
