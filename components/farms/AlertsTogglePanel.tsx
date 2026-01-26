@@ -8,8 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import AlertsPanel from "@/components/farms/AlertsPanel";
 import AlertsHistoryPanel from "@/components/farms/AlertsHistoryPanel";
 import FarmSummaryFilters from "@/components/farms/FarmSummaryFilters";
+import FarmSummaryTable from "@/components/farms/FarmSummaryTable";
+import FarmSummaryCards from "@/components/farms/FarmSummaryCards";
 import { Filter } from "lucide-react";
-import type { RoomSnapshotLiteDTO } from "@/types/dto";
+import type { RoomSnapshotLiteDTO, FarmSummaryDTO } from "@/types/dto";
 
 type StatusKey = "normal" | "warn" | "danger" | "offline";
 
@@ -33,6 +35,9 @@ interface AlertsTogglePanelProps {
   onToggleColumn?: (key: string) => void;
   defaultView?: "history" | "current";
   highlightKey12s?: Set<string>;
+  farmItems?: FarmSummaryDTO[];
+  onSelectFarm?: (registNo: string) => void;
+  highlightRegistNos?: Set<string>;
 }
 
 export default function AlertsTogglePanel({
@@ -55,6 +60,9 @@ export default function AlertsTogglePanel({
   onToggleColumn,
   defaultView = "history",
   highlightKey12s,
+  farmItems,
+  onSelectFarm,
+  highlightRegistNos,
 }: AlertsTogglePanelProps) {
   const [view, setView] = useState<"history" | "current">(defaultView);
 
@@ -99,6 +107,35 @@ export default function AlertsTogglePanel({
                 </label>
               ))}
             </div>
+          )}
+          {farmItems && farmItems.length > 0 && (
+            <>
+              <div className="sm:hidden">
+                <FarmSummaryCards
+                  items={farmItems}
+                  onSelect={onSelectFarm}
+                  highlightRegistNos={highlightRegistNos}
+                />
+              </div>
+              <div className="hidden sm:block">
+                <FarmSummaryTable
+                  items={farmItems}
+                  sortBy={sortBy}
+                  sortDir={sortDir}
+                  onSortChange={onSortChange}
+                  highlightRegistNos={highlightRegistNos}
+                  visibleColumns={visibleColumns as {
+                    totalRooms: boolean;
+                    normal: boolean;
+                    warn: boolean;
+                    danger: boolean;
+                    offline: boolean;
+                    freshness: boolean;
+                    lastUpdated: boolean;
+                  } | undefined}
+                />
+              </div>
+            </>
           )}
           {rooms && onSelectRoom && (
             <AlertsPanel

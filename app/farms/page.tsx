@@ -454,6 +454,9 @@ export default function FarmsPage() {
                 }))
               }
               defaultView="history"
+              farmItems={pagedItems}
+              onSelectFarm={(registNo) => router.push(`/farms/${registNo}`)}
+              highlightRegistNos={highlighted}
             />
           </div>
         )}
