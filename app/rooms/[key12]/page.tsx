@@ -150,42 +150,42 @@ export default function RoomDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <TopBar />
-      <main className="container mx-auto px-4 py-6">
-        <div className="mb-4">
+      <main className="container mx-auto px-4 py-4 sm:py-6">
+        <div className="mb-3 sm:mb-4">
           <Button
             onClick={() => router.back()}
             variant="outline"
-            className="mb-4"
+            className="mb-3 sm:mb-4 min-h-[44px]"
           >
             ← 뒤로
           </Button>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-xl sm:text-2xl font-bold">
             {roomLabel(roomData.mapping.roomNo)} 상세
           </h1>
         </div>
 
-        <Card className="mb-6">
+        <Card className="mb-4 sm:mb-6">
           <CardHeader>
-            <CardTitle>기본 정보</CardTitle>
+            <CardTitle className="text-base sm:text-lg">기본 정보</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <span className="text-gray-600">{FARM_LABEL}:</span>{" "}
-                {roomData.mapping.registNo}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm sm:text-base">{FARM_LABEL}:</span>
+                <span className="font-medium text-sm sm:text-base text-right">{roomData.mapping.registNo}</span>
               </div>
-              <div>
-                <span className="text-gray-600">축사:</span>{" "}
-                {stallLabel(roomData.mapping.stallNo)}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm sm:text-base">축사:</span>
+                <span className="font-medium text-sm sm:text-base text-right">{stallLabel(roomData.mapping.stallNo)}</span>
               </div>
-              <div>
-                <span className="text-gray-600">방:</span>{" "}
-                {roomLabel(roomData.mapping.roomNo)}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm sm:text-base">방:</span>
+                <span className="font-medium text-sm sm:text-base text-right">{roomLabel(roomData.mapping.roomNo)}</span>
               </div>
-              <div>
-                <span className="text-gray-600">상태:</span>{" "}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm sm:text-base">상태:</span>
                 <span
-                  className={
+                  className={`font-medium text-sm sm:text-base text-right ${
                     roomData.state === "normal"
                       ? "text-green-600"
                       : roomData.state === "warn"
@@ -193,46 +193,54 @@ export default function RoomDetailPage() {
                       : roomData.state === "danger"
                       ? "text-red-600"
                       : "text-gray-600"
-                  }
+                  }`}
                 >
                   {roomData.state.toUpperCase()}
                 </span>
               </div>
-              <div>
-                <span className="text-gray-600">측정 시간:</span>{" "}
-                {new Date(roomData.timing.measureTsKst).toLocaleString("ko-KR")}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm sm:text-base">측정 시간:</span>
+                <span className="font-medium text-sm sm:text-base text-right">
+                  {new Date(roomData.timing.measureTsKst).toLocaleString("ko-KR")}
+                </span>
               </div>
-              <div>
-                <span className="text-gray-600">업데이트:</span>{" "}
-                {new Date(roomData.timing.updatedAtKst).toLocaleString("ko-KR")}
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600 text-sm sm:text-base">업데이트:</span>
+                <span className="font-medium text-sm sm:text-base text-right">
+                  {new Date(roomData.timing.updatedAtKst).toLocaleString("ko-KR")}
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
           <SensorsPanel sensors={roomData.sensors} />
           <MotorsPanel motors={roomData.motors} />
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>로그 데이터</CardTitle>
+            <CardTitle className="text-base sm:text-lg">로그 데이터</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs
               value={timeRange}
               onValueChange={(value) => setTimeRange(value as "1h" | "24h" | "none")}
-              className="mb-4"
+              className="mb-3 sm:mb-4"
             >
-              <TabsList>
-                <TabsTrigger value="1h">최근 1시간</TabsTrigger>
-                <TabsTrigger value="24h">최근 24시간</TabsTrigger>
+              <TabsList className="w-full sm:w-auto">
+                <TabsTrigger value="1h" className="flex-1 sm:flex-none min-h-[44px] text-sm sm:text-base">
+                  최근 1시간
+                </TabsTrigger>
+                <TabsTrigger value="24h" className="flex-1 sm:flex-none min-h-[44px] text-sm sm:text-base">
+                  최근 24시간
+                </TabsTrigger>
               </TabsList>
             </Tabs>
-            {logsLoading && <div>로딩 중...</div>}
+            {logsLoading && <div className="text-sm sm:text-base">로딩 중...</div>}
             {logsError && (
-              <div className="text-red-600 mb-2">로그 데이터를 불러오지 못했습니다.</div>
+              <div className="text-red-600 mb-2 text-sm sm:text-base">로그 데이터를 불러오지 못했습니다.</div>
             )}
             {timeRange && logItems.length === 0 && !logsLoading && (
               <EmptyState
@@ -248,6 +256,7 @@ export default function RoomDetailPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => setChartOpen(true)}
+                    className="min-h-[44px] h-auto px-3 py-2 text-sm sm:text-base"
                   >
                     차트 확대
                   </Button>
@@ -256,15 +265,15 @@ export default function RoomDetailPage() {
               </div>
             )}
             {timeRange === "none" && (
-              <div className="text-center text-gray-500 py-8">
+              <div className="text-center text-gray-500 py-6 sm:py-8 text-sm sm:text-base">
                 시간 범위를 선택하여 로그 데이터를 확인하세요.
               </div>
             )}
             {timeRange !== "none" && logItems.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <div className="text-xs text-muted-foreground flex items-center justify-between">
+              <div className="mt-3 sm:mt-4 space-y-2">
+                <div className="text-xs text-muted-foreground flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-0">
                   <span>표시 중: {logItems.length}건</span>
-                  {lastLogsLoadedAt && <span>마지막 로드: {lastLogsLoadedAt}</span>}
+                  {lastLogsLoadedAt && <span className="text-xs">{lastLogsLoadedAt}</span>}
                 </div>
                 <div className="flex justify-center">
                   {nextCursor ? (
@@ -272,6 +281,7 @@ export default function RoomDetailPage() {
                       variant="outline"
                       onClick={handleLoadMore}
                       disabled={isLoadingMore}
+                      className="min-h-[44px] h-auto px-4 py-2 text-sm sm:text-base"
                     >
                       {isLoadingMore ? "불러오는 중..." : "더 보기"}
                     </Button>
