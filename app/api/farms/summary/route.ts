@@ -14,11 +14,30 @@ const SUMMARY_CACHE_TTL_MS = 10000;
 let summaryCache: { data: FarmsSummaryResponseDTO; expiresAt: number } | null =
   null;
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const limitParam = searchParams.get("limit");
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+
     const nowMs = Date.now();
     if (summaryCache && summaryCache.expiresAt > nowMs) {
-      return NextResponse.json(summaryCache.data, {
+      const cachedData = summaryCache.data;
+      // limit이 지정된 경우 캐시된 데이터에서 슬라이스
+      if (limit !== undefined && limit > 0) {
+        return NextResponse.json(
+          {
+            ...cachedData,
+            items: cachedData.items.slice(0, limit),
+          },
+          {
+            headers: {
+              "Cache-Control": "public, max-age=10, stale-while-revalidate=10",
+            },
+          }
+        );
+      }
+      return NextResponse.json(cachedData, {
         headers: {
           "Cache-Control": "public, max-age=10, stale-while-revalidate=10",
         },
@@ -179,11 +198,23 @@ export async function GET() {
       data: responseData,
       expiresAt: Date.now() + SUMMARY_CACHE_TTL_MS,
     };
-    return NextResponse.json(responseData, {
-      headers: {
-        "Cache-Control": "public, max-age=10, stale-while-revalidate=10",
+    
+    // limit이 지정된 경우 해당 개수만 반환
+    const finalItems = limit !== undefined && limit > 0 
+      ? items.slice(0, limit)
+      : items;
+    
+    return NextResponse.json(
+      {
+        ...responseData,
+        items: finalItems,
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "public, max-age=10, stale-while-revalidate=10",
+        },
+      }
+    );
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },

@@ -6,7 +6,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Inbox, SearchX } from "lucide-react";
-import TopBar from "@/components/shell/TopBar";
 import dynamic from "next/dynamic";
 import EmptyState from "@/components/common/EmptyState";
 import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
@@ -16,6 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FarmsSummaryResponseDTO } from "@/types/dto";
+
+const TopBar = dynamic(() => import("@/components/shell/TopBar"), {
+  ssr: false,
+  loading: () => <div className="h-16 w-full bg-white shadow-sm border-b" />,
+});
 
 const OfflineBanner = dynamic(() => import("@/components/farms/OfflineBanner"), {
   ssr: false,
@@ -49,8 +53,11 @@ const AlertsTogglePanel = dynamic(() => import("@/components/farms/AlertsToggleP
   loading: () => <div className="h-[400px] w-full" />,
 });
 
-async function fetchFarmsSummary(): Promise<FarmsSummaryResponseDTO> {
-  const res = await fetch("/api/farms/summary");
+async function fetchFarmsSummary(limit?: number): Promise<FarmsSummaryResponseDTO> {
+  const url = limit 
+    ? `/api/farms/summary?limit=${limit}`
+    : "/api/farms/summary";
+  const res = await fetch(url);
   if (!res.ok) {
     throw new Error("Failed to fetch farms summary");
   }
@@ -66,6 +73,7 @@ export default function FarmsPage() {
   type StatusKey = "normal" | "warn" | "danger" | "offline";
   const [statusFilter, setStatusFilter] = useState<StatusKey[]>([]);
   const [showDeferred, setShowDeferred] = useState(false);
+  const [showAlertsPanel, setShowAlertsPanel] = useState(false);
   const [page, setPage] = useState(1);
   const [highlighted, setHighlighted] = useState<Set<string>>(new Set());
   const prevSnapshotRef = useRef<Map<string, string>>(new Map());
@@ -80,15 +88,25 @@ export default function FarmsPage() {
     lastUpdated: true,
   });
 
+  // 초기 로드 시 첫 10개만 가져오기 (로딩 속도 개선)
   const { data, isLoading, error } = useQuery({
-    queryKey: ["farms-summary"],
-    queryFn: fetchFarmsSummary,
+    queryKey: ["farms-summary", 10],
+    queryFn: () => fetchFarmsSummary(10), // 초기 로드 시 10개만
     refetchInterval: 15000, // 15초 폴링
     refetchOnWindowFocus: false,
     retry: 1,
     retryDelay: 2000,
     staleTime: 10000, // 10초간 fresh 상태 유지 (캐시 활용)
     gcTime: 300000, // 5분간 캐시 유지 (React Query v5)
+  });
+  
+  // 전체 데이터를 백그라운드에서 가져오기 (초기 로드 후)
+  const { data: allData } = useQuery({
+    queryKey: ["farms-summary", "all"],
+    queryFn: () => fetchFarmsSummary(), // 전체 데이터
+    enabled: !!data, // 초기 데이터 로드 후 활성화
+    staleTime: 10000,
+    gcTime: 300000,
   });
 
   useEffect(() => {
@@ -117,10 +135,33 @@ export default function FarmsPage() {
     };
   }, []);
 
-  // 필터링 및 정렬 (데이터가 있을 때만)
-  const baseItems = data
+  // AlertsTogglePanel 지연 로딩 (데이터 로드 후)
+  useEffect(() => {
+    if (!data) return;
+    let cancelled = false;
+    const onIdle = () => {
+      if (!cancelled) setShowAlertsPanel(true);
+    };
+    const idleCallback = (window as any).requestIdleCallback;
+    let handle: number;
+    if (typeof idleCallback === "function") {
+      handle = idleCallback(onIdle, { timeout: 500 });
+      return () => {
+        cancelled = true;
+        (window as any).cancelIdleCallback?.(handle);
+      };
+    }
+    handle = window.setTimeout(onIdle, 500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(handle);
+    };
+  }, [data]);
+
+  // 필터링 및 정렬 (전체 데이터가 있으면 사용, 없으면 초기 10개 사용)
+  const baseItems = (allData?.items || data?.items)
     ? (() => {
-        let items = [...data.items];
+        let items = [...(allData?.items || data?.items || [])];
         if (debouncedSearch) {
           items = items.filter((item) =>
             item.registNo.toLowerCase().includes(debouncedSearch.toLowerCase())
@@ -349,17 +390,19 @@ export default function FarmsPage() {
         }
       />
       <main className="container mx-auto px-4 py-6">
-        <FarmOverviewHeader
-          lastUpdatedAtKst={lastUpdatedAtKst}
-          title="농장 목록"
-          totalRooms={totalRooms}
-          normalRate={normalRate}
-          offlineRate={offlineRate}
-          farmCount={baseItems.length}
-          statusPieData={statusPieData}
-          statusFilter={statusFilter}
-          onStatusSelect={(id) => handleStatusSelect(id as StatusKey)}
-        />
+        {data && (
+          <FarmOverviewHeader
+            lastUpdatedAtKst={lastUpdatedAtKst}
+            title="농장 목록"
+            totalRooms={totalRooms}
+            normalRate={normalRate}
+            offlineRate={offlineRate}
+            farmCount={baseItems.length}
+            statusPieData={statusPieData}
+            statusFilter={statusFilter}
+            onStatusSelect={(id) => handleStatusSelect(id as StatusKey)}
+          />
+        )}
         <div className="mt-6 space-y-4">
           {showDeferred && (
             <OfflineBanner
@@ -368,7 +411,8 @@ export default function FarmsPage() {
               totalRooms={totalRooms}
             />
           )}
-          <AlertsTogglePanel
+          {showAlertsPanel && (
+            <AlertsTogglePanel
             registNo={undefined}
             stateFilter={statusFilter}
             statusMeta={statusMeta.map((s) => ({
@@ -439,6 +483,7 @@ export default function FarmsPage() {
             endIndex={endIndex}
             totalItems={filteredItems.length}
           />
+          )}
         </div>
       </main>
     </div>
