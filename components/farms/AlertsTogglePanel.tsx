@@ -10,8 +10,10 @@ import AlertsHistoryPanel from "@/components/farms/AlertsHistoryPanel";
 import FarmSummaryFilters from "@/components/farms/FarmSummaryFilters";
 import FarmSummaryTable from "@/components/farms/FarmSummaryTable";
 import FarmSummaryCards from "@/components/farms/FarmSummaryCards";
-import { Filter } from "lucide-react";
+import EmptyState from "@/components/common/EmptyState";
+import { Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import type { RoomSnapshotLiteDTO, FarmSummaryDTO } from "@/types/dto";
+import type { ReactNode } from "react";
 
 type StatusKey = "normal" | "warn" | "danger" | "offline";
 
@@ -38,6 +40,18 @@ interface AlertsTogglePanelProps {
   farmItems?: FarmSummaryDTO[];
   onSelectFarm?: (registNo: string) => void;
   highlightRegistNos?: Set<string>;
+  isEmpty?: boolean;
+  emptyStateTitle?: string;
+  emptyStateDescription?: string;
+  emptyStateIcon?: ReactNode;
+  emptyStateActionLabel?: string;
+  onEmptyStateAction?: () => void;
+  currentPage?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  startIndex?: number;
+  endIndex?: number;
+  totalItems?: number;
 }
 
 export default function AlertsTogglePanel({
@@ -63,6 +77,18 @@ export default function AlertsTogglePanel({
   farmItems,
   onSelectFarm,
   highlightRegistNos,
+  isEmpty = false,
+  emptyStateTitle,
+  emptyStateDescription,
+  emptyStateIcon,
+  emptyStateActionLabel,
+  onEmptyStateAction,
+  currentPage,
+  totalPages,
+  onPageChange,
+  startIndex,
+  endIndex,
+  totalItems,
 }: AlertsTogglePanelProps) {
   const [view, setView] = useState<"history" | "current">(defaultView);
 
@@ -108,33 +134,80 @@ export default function AlertsTogglePanel({
               ))}
             </div>
           )}
-          {farmItems && farmItems.length > 0 && (
+          {isEmpty ? (
+            <EmptyState
+              title={emptyStateTitle || "표시할 농장이 없습니다"}
+              description={emptyStateDescription || "현재 표시할 농장 데이터가 없습니다."}
+              icon={emptyStateIcon}
+              actionLabel={emptyStateActionLabel}
+              onAction={onEmptyStateAction}
+            />
+          ) : (
             <>
-              <div className="sm:hidden">
-                <FarmSummaryCards
-                  items={farmItems}
-                  onSelect={onSelectFarm}
-                  highlightRegistNos={highlightRegistNos}
-                />
-              </div>
-              <div className="hidden sm:block">
-                <FarmSummaryTable
-                  items={farmItems}
-                  sortBy={sortBy}
-                  sortDir={sortDir}
-                  onSortChange={onSortChange}
-                  highlightRegistNos={highlightRegistNos}
-                  visibleColumns={visibleColumns as {
-                    totalRooms: boolean;
-                    normal: boolean;
-                    warn: boolean;
-                    danger: boolean;
-                    offline: boolean;
-                    freshness: boolean;
-                    lastUpdated: boolean;
-                  } | undefined}
-                />
-              </div>
+              {farmItems && farmItems.length > 0 && (
+                <>
+                  {currentPage !== undefined &&
+                    totalPages !== undefined &&
+                    onPageChange &&
+                    startIndex !== undefined &&
+                    endIndex !== undefined &&
+                    totalItems !== undefined && (
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+                        <div className="text-xs text-muted-foreground">
+                          {startIndex + 1}-{endIndex} / {totalItems} 표시
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+                            disabled={currentPage <= 1}
+                            aria-label="이전 10개"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <span className="text-xs text-muted-foreground">
+                            {currentPage} / {totalPages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+                            disabled={currentPage >= totalPages}
+                            aria-label="다음 10개"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  <div className="sm:hidden">
+                    <FarmSummaryCards
+                      items={farmItems}
+                      onSelect={onSelectFarm}
+                      highlightRegistNos={highlightRegistNos}
+                    />
+                  </div>
+                  <div className="hidden sm:block">
+                    <FarmSummaryTable
+                      items={farmItems}
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onSortChange={onSortChange}
+                      highlightRegistNos={highlightRegistNos}
+                      visibleColumns={visibleColumns as {
+                        totalRooms: boolean;
+                        normal: boolean;
+                        warn: boolean;
+                        danger: boolean;
+                        offline: boolean;
+                        freshness: boolean;
+                        lastUpdated: boolean;
+                      } | undefined}
+                    />
+                  </div>
+                </>
+              )}
             </>
           )}
           {rooms && onSelectRoom && (

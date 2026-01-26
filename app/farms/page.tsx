@@ -5,11 +5,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Filter, Inbox, SearchX } from "lucide-react";
+import { AlertTriangle, Inbox, SearchX } from "lucide-react";
 import TopBar from "@/components/shell/TopBar";
 import dynamic from "next/dynamic";
-import FarmSummaryTable from "@/components/farms/FarmSummaryTable";
-import FarmSummaryCards from "@/components/farms/FarmSummaryCards";
 import EmptyState from "@/components/common/EmptyState";
 import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
 import FarmSummaryTableSkeleton from "@/components/skeletons/FarmSummaryTableSkeleton";
@@ -335,27 +333,70 @@ export default function FarmsPage() {
           statusFilter={statusFilter}
           onStatusSelect={(id) => handleStatusSelect(id as StatusKey)}
         />
-        {filteredItems.length === 0 ? (
-          <EmptyState
-            title={
+        <div className="mt-6 space-y-4">
+          {showDeferred && (
+            <OfflineBanner
+              lastUpdatedAtKst={lastUpdatedAtKst}
+              totalOffline={totalOffline}
+              totalRooms={totalRooms}
+            />
+          )}
+          <AlertsTogglePanel
+            registNo={undefined}
+            stateFilter={statusFilter}
+            statusMeta={statusMeta.map((s) => ({
+              id: s.id,
+              label: s.label,
+              count: s.count,
+            }))}
+            onToggleStatus={(id) => handleStatusSelect(id as StatusKey)}
+            onSelectAllStatus={() =>
+              setStatusFilter(["normal", "warn", "danger", "offline"])
+            }
+            onClearStatus={() => setStatusFilter([])}
+            debouncedSearch={debouncedSearch}
+            sortLabel={sortLabel}
+            sortBy={sortBy}
+            sortDir={sortDir}
+            onResetFilters={() => {
+              setStatusFilter([]);
+              setSearch("");
+              setSortBy("registNo");
+              setSortDir("asc");
+            }}
+            onSearchChange={setSearch}
+            onSortChange={handleSortChange}
+            visibleColumns={visibleColumns}
+            onToggleColumn={(key) =>
+              setVisibleColumns((prev) => ({
+                ...prev,
+                [key]: !prev[key as keyof typeof prev],
+              }))
+            }
+            defaultView="current"
+            farmItems={pagedItems}
+            onSelectFarm={(registNo) => router.push(`/farms/${registNo}`)}
+            highlightRegistNos={highlighted}
+            isEmpty={filteredItems.length === 0}
+            emptyStateTitle={
               debouncedSearch || statusFilter.length > 0
                 ? "조건에 맞는 농장이 없습니다"
                 : "표시할 농장이 없습니다"
             }
-            description={
+            emptyStateDescription={
               debouncedSearch || statusFilter.length > 0
                 ? "필터를 해제하거나 다른 조건을 선택해 보세요."
                 : "현재 표시할 농장 데이터가 없습니다."
             }
-            icon={
+            emptyStateIcon={
               debouncedSearch || statusFilter.length > 0 ? (
                 <SearchX className="h-5 w-5 text-muted-foreground" />
               ) : (
                 <Inbox className="h-5 w-5 text-muted-foreground" />
               )
             }
-            actionLabel={search ? "필터 초기화" : undefined}
-            onAction={
+            emptyStateActionLabel={search ? "필터 초기화" : undefined}
+            onEmptyStateAction={
               search
                 ? () => {
                     setSearch("");
@@ -364,102 +405,14 @@ export default function FarmsPage() {
                   }
                 : undefined
             }
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            totalItems={filteredItems.length}
           />
-        ) : (
-          <>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
-              <div className="text-xs text-muted-foreground">
-                {startIndex + 1}-{endIndex} / {filteredItems.length} 표시
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                  disabled={currentPage <= 1}
-                  aria-label="이전 10개"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-xs text-muted-foreground">
-                  {currentPage} / {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage >= totalPages}
-                  aria-label="다음 10개"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="sm:hidden">
-              <FarmSummaryCards
-                items={pagedItems}
-                onSelect={(registNo) => router.push(`/farms/${registNo}`)}
-                highlightRegistNos={highlighted}
-              />
-            </div>
-            <div className="hidden sm:block">
-              <FarmSummaryTable
-                items={pagedItems}
-                sortBy={sortBy}
-                sortDir={sortDir}
-                onSortChange={handleSortChange}
-                highlightRegistNos={highlighted}
-                visibleColumns={visibleColumns}
-              />
-            </div>
-          </>
-        )}
-        {showDeferred && (
-          <div className="mt-6 space-y-4">
-            <OfflineBanner
-              lastUpdatedAtKst={lastUpdatedAtKst}
-              totalOffline={totalOffline}
-              totalRooms={totalRooms}
-            />
-            <AlertsTogglePanel
-              registNo={undefined}
-              stateFilter={statusFilter}
-              statusMeta={statusMeta.map((s) => ({
-                id: s.id,
-                label: s.label,
-                count: s.count,
-              }))}
-              onToggleStatus={(id) => handleStatusSelect(id as StatusKey)}
-              onSelectAllStatus={() =>
-                setStatusFilter(["normal", "warn", "danger", "offline"])
-              }
-              onClearStatus={() => setStatusFilter([])}
-              debouncedSearch={debouncedSearch}
-              sortLabel={sortLabel}
-              sortBy={sortBy}
-              sortDir={sortDir}
-              onResetFilters={() => {
-                setStatusFilter([]);
-                setSearch("");
-                setSortBy("registNo");
-                setSortDir("asc");
-              }}
-              onSearchChange={setSearch}
-              onSortChange={handleSortChange}
-              visibleColumns={visibleColumns}
-              onToggleColumn={(key) =>
-                setVisibleColumns((prev) => ({
-                  ...prev,
-                  [key]: !prev[key as keyof typeof prev],
-                }))
-              }
-              defaultView="history"
-              farmItems={pagedItems}
-              onSelectFarm={(registNo) => router.push(`/farms/${registNo}`)}
-              highlightRegistNos={highlighted}
-            />
-          </div>
-        )}
+        </div>
       </main>
     </div>
   );
