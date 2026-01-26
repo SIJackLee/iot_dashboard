@@ -93,14 +93,22 @@ export default function FarmsPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const schedule = (window as any).requestIdleCallback || window.setTimeout;
-    const cancel = (window as any).cancelIdleCallback || window.clearTimeout;
-    const handle = schedule(() => {
+    const onIdle = () => {
       if (!cancelled) setShowDeferred(true);
-    }, 200);
+    };
+    const idleCallback = (window as any).requestIdleCallback;
+    let handle: number;
+    if (typeof idleCallback === "function") {
+      handle = idleCallback(onIdle, { timeout: 200 });
+      return () => {
+        cancelled = true;
+        (window as any).cancelIdleCallback?.(handle);
+      };
+    }
+    handle = window.setTimeout(onIdle, 200);
     return () => {
       cancelled = true;
-      cancel(handle);
+      window.clearTimeout(handle);
     };
   }, []);
 
