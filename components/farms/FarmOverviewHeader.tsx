@@ -1,9 +1,10 @@
-// FarmOverviewHeader 컴포넌트 - 마지막 갱신/제목/요약/도넛 통합
+// FarmOverviewHeader 컴포넌트 - 마지막 갱신/제목/요약/도넛/히트맵 통합
 
 "use client";
 
 import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
+import type { FarmSummaryDTO } from "@/types/dto";
 
 interface PieItem {
   id?: string;
@@ -22,11 +23,18 @@ interface FarmOverviewHeaderProps {
   statusPieData: PieItem[];
   statusFilter: string[];
   onStatusSelect: (id: string) => void;
+  farms?: FarmSummaryDTO[];
+  onFarmClick?: (registNo: string) => void;
 }
 
 const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
   ssr: false,
   loading: () => <div className="h-[260px] min-h-[260px] w-full" />,
+});
+
+const FarmHeatmap = dynamic(() => import("@/components/charts/FarmHeatmap"), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full" />,
 });
 
 export default function FarmOverviewHeader({
@@ -39,6 +47,8 @@ export default function FarmOverviewHeader({
   statusPieData,
   statusFilter,
   onStatusSelect,
+  farms,
+  onFarmClick,
 }: FarmOverviewHeaderProps) {
   const formatRate = (value: number) => `${value.toFixed(1)}%`;
   
@@ -106,14 +116,29 @@ export default function FarmOverviewHeader({
         </div>
       </Card>
       
-      {/* 도넛 차트: PC에서만 표시 */}
+      {/* 도넛 차트와 히트맵: PC에서만 표시 */}
       <div className="hidden sm:block">
-        <StatusPieChart
-          title="상태 분포"
-          data={statusPieData}
-          selectedIds={statusFilter}
-          onSelect={onStatusSelect}
-        />
+        {farms && farms.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <StatusPieChart
+              title="상태 분포"
+              data={statusPieData}
+              selectedIds={statusFilter}
+              onSelect={onStatusSelect}
+            />
+            <FarmHeatmap
+              farms={farms}
+              onFarmClick={onFarmClick}
+            />
+          </div>
+        ) : (
+          <StatusPieChart
+            title="상태 분포"
+            data={statusPieData}
+            selectedIds={statusFilter}
+            onSelect={onStatusSelect}
+          />
+        )}
       </div>
     </div>
   );
