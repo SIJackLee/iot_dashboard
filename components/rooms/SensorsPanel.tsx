@@ -9,6 +9,15 @@ interface SensorsPanelProps {
   sensors: SensorsDTO;
 }
 
+// 센서별 임계값 (stateRules.ts와 동일)
+const SENSOR_THRESHOLDS: Record<string, { warn: number; danger: number }> = {
+  es01: { warn: 280, danger: 320 }, // 온도 28.0C / 32.0C
+  es02: { warn: 650, danger: 750 }, // 습도 65% / 75%
+  es03: { warn: 2300, danger: 2600 }, // CO2 ppm
+  es04: { warn: 230, danger: 280 }, // NH3 23ppm / 28ppm (x10)
+  es09: { warn: 380, danger: 450 }, // 음압 38Pa / 45Pa (x10)
+};
+
 export default function SensorsPanel({ sensors }: SensorsPanelProps) {
   const sensorKeys: Array<keyof SensorsDTO> = ["es01", "es02", "es03", "es04", "es09"];
 
@@ -26,11 +35,37 @@ export default function SensorsPanel({ sensors }: SensorsPanelProps) {
     return { max, min, avg };
   };
 
-  const getValueColor = (value: number) => {
-    // 색상 판정은 원본 값 기준 (임계값이 x10 스케일 기준)
-    if (value >= 900) return "text-red-600 bg-red-50 border-red-200";
-    if (value >= 700) return "text-yellow-600 bg-yellow-50 border-yellow-200";
+  const getValueColor = (value: number, sensorKey: string) => {
+    // 센서별 임계값 사용 (원본 값 기준, x10 스케일)
+    const thresholds = SENSOR_THRESHOLDS[sensorKey.toLowerCase()];
+    if (!thresholds) {
+      // 임계값이 없는 경우 기본값
+      return "text-gray-600 bg-gray-50 border-gray-200";
+    }
+    
+    if (value >= thresholds.danger) {
+      return "text-red-600 bg-red-50 border-red-200";
+    }
+    if (value >= thresholds.warn) {
+      return "text-yellow-600 bg-yellow-50 border-yellow-200";
+    }
     return "text-green-600 bg-green-50 border-green-200";
+  };
+
+  const getMaxValueColor = (value: number, sensorKey: string) => {
+    // 최대값 색상 판정 (원본 값 기준, x10 스케일)
+    const thresholds = SENSOR_THRESHOLDS[sensorKey.toLowerCase()];
+    if (!thresholds) {
+      return "text-gray-600";
+    }
+    
+    if (value >= thresholds.danger) {
+      return "text-red-600";
+    }
+    if (value >= thresholds.warn) {
+      return "text-yellow-600";
+    }
+    return "text-green-600";
   };
 
   return (
@@ -49,13 +84,7 @@ export default function SensorsPanel({ sensors }: SensorsPanelProps) {
               <div className="flex items-center justify-between mb-2">
                 <span className="font-medium text-sm">{sensorLabel(key)}</span>
                 <span
-                  className={`font-semibold text-base ${
-                    maxOriginal >= 900
-                      ? "text-red-600"
-                      : maxOriginal >= 700
-                      ? "text-yellow-600"
-                      : "text-green-600"
-                  }`}
+                  className={`font-semibold text-base ${getMaxValueColor(maxOriginal, key)}`}
                 >
                   {stats.max.toFixed(1)} {unit}
                 </span>
@@ -84,7 +113,7 @@ export default function SensorsPanel({ sensors }: SensorsPanelProps) {
                   return (
                     <div
                       key={idx}
-                      className={`rounded px-2 py-1 text-xs border ${getValueColor(val)}`}
+                      className={`rounded px-2 py-1 text-xs border ${getValueColor(val, key)}`}
                     >
                       <span className="text-gray-500">#{idx + 1}</span>
                       <span className="ml-1 font-semibold">{convertedVal.toFixed(1)} {unit}</span>
@@ -125,7 +154,7 @@ export default function SensorsPanel({ sensors }: SensorsPanelProps) {
                         return (
                           <span
                             key={idx}
-                            className={`rounded px-2 py-0.5 text-xs border ${getValueColor(val)}`}
+                            className={`rounded px-2 py-0.5 text-xs border ${getValueColor(val, key)}`}
                           >
                             #{idx + 1}: {convertedVal.toFixed(1)} {unit}
                           </span>
@@ -135,13 +164,7 @@ export default function SensorsPanel({ sensors }: SensorsPanelProps) {
                   </td>
                   <td className="py-2 px-2">
                     <span
-                      className={`font-semibold ${
-                        maxOriginal >= 900
-                          ? "text-red-600"
-                          : maxOriginal >= 700
-                          ? "text-yellow-600"
-                          : "text-green-600"
-                      }`}
+                      className={`font-semibold ${getMaxValueColor(maxOriginal, key)}`}
                     >
                       {stats.max.toFixed(1)} {unit}
                     </span>
