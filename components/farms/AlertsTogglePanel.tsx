@@ -113,11 +113,47 @@ export default function AlertsTogglePanel({
 
       {view === "current" && (
         <div className="space-y-3">
+          {/* 모바일: 핵심 필터만 (위험/오프라인) */}
+          <div className="sm:hidden flex flex-wrap items-center gap-2">
+            {statusMeta
+              .filter((s) => s.id === "danger" || s.id === "offline")
+              .map((s) => (
+                <Button
+                  key={s.id}
+                  size="sm"
+                  variant={stateFilter?.includes(s.id) ? "default" : "outline"}
+                  onClick={() => onToggleStatus?.(s.id)}
+                  className="text-xs"
+                >
+                  {s.label} {s.count > 0 && `(${s.count})`}
+                </Button>
+              ))}
+            {onSearchChange && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  // 검색 입력을 위한 간단한 처리 (추후 개선 가능)
+                  const searchValue = prompt("농장 검색:");
+                  if (searchValue !== null) {
+                    onSearchChange(searchValue);
+                  }
+                }}
+                className="text-xs"
+              >
+                검색
+              </Button>
+            )}
+          </div>
+          
+          {/* PC: 전체 필터 */}
           {onSearchChange && onSortChange && (
-            <FarmSummaryFilters
-              onSearchChange={onSearchChange}
-              onSortChange={onSortChange}
-            />
+            <div className="hidden sm:block">
+              <FarmSummaryFilters
+                onSearchChange={onSearchChange}
+                onSortChange={onSortChange}
+              />
+            </div>
           )}
           {visibleColumns && onToggleColumn && (
             <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-muted-foreground">

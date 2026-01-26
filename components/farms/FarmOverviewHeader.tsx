@@ -41,6 +41,10 @@ export default function FarmOverviewHeader({
   onStatusSelect,
 }: FarmOverviewHeaderProps) {
   const formatRate = (value: number) => `${value.toFixed(1)}%`;
+  
+  // 위험/오프라인 수 계산
+  const totalDanger = statusPieData.find((d) => d.id === "danger")?.value || 0;
+  const totalOffline = statusPieData.find((d) => d.id === "offline")?.value || 0;
 
   return (
     <div className="space-y-4 mb-6">
@@ -52,8 +56,31 @@ export default function FarmOverviewHeader({
             : "N/A"}
         </div>
       </div>
-      <h1 className="text-2xl font-bold">{title}</h1>
-      <Card className="bg-white rounded-lg shadow-sm border p-4">
+      <h1 className="text-xl sm:text-2xl font-bold">{title}</h1>
+      
+      {/* 모바일: 핵심 정보만 (정상률, 위험/오프라인 수) */}
+      <Card className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 sm:hidden">
+        <div className="text-xs text-muted-foreground mb-2">핵심 요약</div>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <div className="text-muted-foreground text-xs">정상률</div>
+            <div className="text-base font-semibold text-green-600">
+              {formatRate(normalRate)}
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground text-xs">위험/오프라인</div>
+            <div className="text-base font-semibold">
+              <span className="text-red-600">{totalDanger}</span>
+              <span className="text-gray-600 mx-1">/</span>
+              <span className="text-gray-600">{totalOffline}</span>
+            </div>
+          </div>
+        </div>
+      </Card>
+      
+      {/* PC: 전체 요약 */}
+      <Card className="bg-white rounded-lg shadow-sm border p-4 hidden sm:block">
         <div className="text-sm text-muted-foreground mb-2">전체 요약</div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
           <div>
@@ -78,12 +105,16 @@ export default function FarmOverviewHeader({
           </div>
         </div>
       </Card>
-      <StatusPieChart
-        title="상태 분포"
-        data={statusPieData}
-        selectedIds={statusFilter}
-        onSelect={onStatusSelect}
-      />
+      
+      {/* 도넛 차트: PC에서만 표시 */}
+      <div className="hidden sm:block">
+        <StatusPieChart
+          title="상태 분포"
+          data={statusPieData}
+          selectedIds={statusFilter}
+          onSelect={onStatusSelect}
+        />
+      </div>
     </div>
   );
 }
