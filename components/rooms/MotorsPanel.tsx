@@ -8,6 +8,7 @@ import {
   ventModeLabel,
   VENT_MODE_LABEL,
   ACTIVE_VENT_LABEL,
+  getMotorUnit,
 } from "@/lib/labels";
 
 interface MotorsPanelProps {
@@ -50,6 +51,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
         
         {(() => {
           const ec01Stats = getStats(motors.ec01);
+          const unit = getMotorUnit("ec01");
           return (
             <div className="bg-white rounded-lg border p-3">
               <div className="flex items-center justify-between mb-2">
@@ -61,15 +63,15 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
               <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
                 <div className="text-center">
                   <div className="text-xs text-gray-500">최대</div>
-                  <div className="font-semibold text-sm text-red-600">{ec01Stats.max}</div>
+                  <div className="font-semibold text-sm text-red-600">{ec01Stats.max} {unit}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-500">최소</div>
-                  <div className="font-semibold text-sm text-blue-600">{ec01Stats.min}</div>
+                  <div className="font-semibold text-sm text-blue-600">{ec01Stats.min} {unit}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-500">평균</div>
-                  <div className="font-semibold text-sm text-green-600">{ec01Stats.avg}</div>
+                  <div className="font-semibold text-sm text-green-600">{ec01Stats.avg} {unit}</div>
                 </div>
               </div>
               
@@ -81,7 +83,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                     className={`rounded px-2 py-1 text-xs border ${getMotorValueColor(val)}`}
                   >
                     <span className="text-gray-500">#{idx + 1}</span>
-                    <span className="ml-1 font-semibold">{val}</span>
+                    <span className="ml-1 font-semibold">{val} {unit}</span>
                   </div>
                 ))}
               </div>
@@ -91,6 +93,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
         
         {(() => {
           const ec02Stats = motors.ec02 ? getStats(motors.ec02) : null;
+          const unit = getMotorUnit("ec02");
           return (
             <div className="bg-white rounded-lg border p-3">
               <div className="flex items-center justify-between mb-2">
@@ -105,15 +108,15 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                   <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
                     <div className="text-center">
                       <div className="text-xs text-gray-500">최대</div>
-                      <div className="font-semibold text-sm text-red-600">{ec02Stats.max}</div>
+                      <div className="font-semibold text-sm text-red-600">{ec02Stats.max} {unit}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-gray-500">최소</div>
-                      <div className="font-semibold text-sm text-blue-600">{ec02Stats.min}</div>
+                      <div className="font-semibold text-sm text-blue-600">{ec02Stats.min} {unit}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-gray-500">평균</div>
-                      <div className="font-semibold text-sm text-green-600">{ec02Stats.avg}</div>
+                      <div className="font-semibold text-sm text-green-600">{ec02Stats.avg} {unit}</div>
                     </div>
                   </div>
                   
@@ -125,7 +128,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                         className={`rounded px-2 py-1 text-xs border ${getMotorValueColor(val)}`}
                       >
                         <span className="text-gray-500">#{idx + 1}</span>
-                        <span className="ml-1 font-semibold">{val}</span>
+                        <span className="ml-1 font-semibold">{val} {unit}</span>
                       </div>
                     ))}
                   </div>
@@ -139,6 +142,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
         
         {(() => {
           const ec03Stats = motors.ec03 ? getStats(motors.ec03) : null;
+          const unit = getMotorUnit("ec03");
           return (
             <div className="bg-white rounded-lg border p-3">
               <div className="flex items-center justify-between mb-2">
@@ -153,15 +157,15 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                   <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
                     <div className="text-center">
                       <div className="text-xs text-gray-500">최대</div>
-                      <div className="font-semibold text-sm text-red-600">{ec03Stats.max}</div>
+                      <div className="font-semibold text-sm text-red-600">{ec03Stats.max} {unit}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-gray-500">최소</div>
-                      <div className="font-semibold text-sm text-blue-600">{ec03Stats.min}</div>
+                      <div className="font-semibold text-sm text-blue-600">{ec03Stats.min} {unit}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-gray-500">평균</div>
-                      <div className="font-semibold text-sm text-green-600">{ec03Stats.avg}</div>
+                      <div className="font-semibold text-sm text-green-600">{ec03Stats.avg} {unit}</div>
                     </div>
                   </div>
                   
@@ -173,7 +177,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                         className={`rounded px-2 py-1 text-xs border ${getMotorValueColor(val)}`}
                       >
                         <span className="text-gray-500">#{idx + 1}</span>
-                        <span className="ml-1 font-semibold">{val}</span>
+                        <span className="ml-1 font-semibold">{val} {unit}</span>
                       </div>
                     ))}
                   </div>
@@ -187,6 +191,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
         
         {(() => {
           const activeVentStats = getStats(motors.activeVent);
+          const unit = getMotorUnit("ec01"); // activeVent는 모터이므로 RPM 단위 사용
           return (
             <div className="bg-white rounded-lg border p-3">
               <div className="flex items-center justify-between mb-2">
@@ -198,15 +203,15 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
               <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
                 <div className="text-center">
                   <div className="text-xs text-gray-500">최대</div>
-                  <div className="font-semibold text-sm text-red-600">{activeVentStats.max}</div>
+                  <div className="font-semibold text-sm text-red-600">{activeVentStats.max} {unit}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-500">최소</div>
-                  <div className="font-semibold text-sm text-blue-600">{activeVentStats.min}</div>
+                  <div className="font-semibold text-sm text-blue-600">{activeVentStats.min} {unit}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-gray-500">평균</div>
-                  <div className="font-semibold text-sm text-green-600">{activeVentStats.avg}</div>
+                  <div className="font-semibold text-sm text-green-600">{activeVentStats.avg} {unit}</div>
                 </div>
               </div>
               
@@ -218,7 +223,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                     className={`rounded px-2 py-1 text-xs border ${getMotorValueColor(val)}`}
                   >
                     <span className="text-gray-500">#{idx + 1}</span>
-                    <span className="ml-1 font-semibold">{val}</span>
+                    <span className="ml-1 font-semibold">{val} {unit}</span>
                   </div>
                 ))}
               </div>
@@ -247,6 +252,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
           <tbody>
             {(() => {
               const ec01Stats = getStats(motors.ec01);
+              const unit = getMotorUnit("ec01");
               return (
                 <tr className="border-b">
                   <td className="py-2 px-2 font-medium">{motorLabel("ec01")}</td>
@@ -257,19 +263,19 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                           key={idx}
                           className={`rounded px-2 py-0.5 text-xs border ${getMotorValueColor(val)}`}
                         >
-                          #{idx + 1}: {val}
+                          #{idx + 1}: {val} {unit}
                         </span>
                       ))}
                     </div>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold text-red-600">{ec01Stats.max}</span>
+                    <span className="font-semibold text-red-600">{ec01Stats.max} {unit}</span>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold text-blue-600">{ec01Stats.min}</span>
+                    <span className="font-semibold text-blue-600">{ec01Stats.min} {unit}</span>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold text-green-600">{ec01Stats.avg}</span>
+                    <span className="font-semibold text-green-600">{ec01Stats.avg} {unit}</span>
                   </td>
                   <td className="py-2 px-2 text-green-600">활성</td>
                 </tr>
@@ -277,6 +283,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
             })()}
             {(() => {
               const ec02Stats = motors.ec02 ? getStats(motors.ec02) : null;
+              const unit = getMotorUnit("ec02");
               return (
                 <tr className="border-b">
                   <td className="py-2 px-2 font-medium">{motorLabel("ec02")}</td>
@@ -288,7 +295,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                             key={idx}
                             className={`rounded px-2 py-0.5 text-xs border ${getMotorValueColor(val)}`}
                           >
-                            #{idx + 1}: {val}
+                            #{idx + 1}: {val} {unit}
                           </span>
                         ))}
                       </div>
@@ -297,13 +304,13 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                     )}
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold">{ec02Stats ? ec02Stats.max : "-"}</span>
+                    <span className="font-semibold">{ec02Stats ? `${ec02Stats.max} ${unit}` : "-"}</span>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold">{ec02Stats ? ec02Stats.min : "-"}</span>
+                    <span className="font-semibold">{ec02Stats ? `${ec02Stats.min} ${unit}` : "-"}</span>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold">{ec02Stats ? ec02Stats.avg : "-"}</span>
+                    <span className="font-semibold">{ec02Stats ? `${ec02Stats.avg} ${unit}` : "-"}</span>
                   </td>
                   <td className="py-2 px-2">
                     {motors.ventMode === "exhaust" ? (
@@ -317,6 +324,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
             })()}
             {(() => {
               const ec03Stats = motors.ec03 ? getStats(motors.ec03) : null;
+              const unit = getMotorUnit("ec03");
               return (
                 <tr className="border-b">
                   <td className="py-2 px-2 font-medium">{motorLabel("ec03")}</td>
@@ -328,7 +336,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                             key={idx}
                             className={`rounded px-2 py-0.5 text-xs border ${getMotorValueColor(val)}`}
                           >
-                            #{idx + 1}: {val}
+                            #{idx + 1}: {val} {unit}
                           </span>
                         ))}
                       </div>
@@ -337,13 +345,13 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                     )}
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold">{ec03Stats ? ec03Stats.max : "-"}</span>
+                    <span className="font-semibold">{ec03Stats ? `${ec03Stats.max} ${unit}` : "-"}</span>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold">{ec03Stats ? ec03Stats.min : "-"}</span>
+                    <span className="font-semibold">{ec03Stats ? `${ec03Stats.min} ${unit}` : "-"}</span>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold">{ec03Stats ? ec03Stats.avg : "-"}</span>
+                    <span className="font-semibold">{ec03Stats ? `${ec03Stats.avg} ${unit}` : "-"}</span>
                   </td>
                   <td className="py-2 px-2">
                     {motors.ventMode === "intake" ? (
@@ -357,6 +365,7 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
             })()}
             {(() => {
               const activeVentStats = getStats(motors.activeVent);
+              const unit = getMotorUnit("ec01"); // activeVent는 모터이므로 RPM 단위 사용
               return (
                 <tr>
                   <td className="py-2 px-2 font-medium">{ACTIVE_VENT_LABEL}</td>
@@ -367,19 +376,19 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                           key={idx}
                           className={`rounded px-2 py-0.5 text-xs border ${getMotorValueColor(val)}`}
                         >
-                          #{idx + 1}: {val}
+                          #{idx + 1}: {val} {unit}
                         </span>
                       ))}
                     </div>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold text-red-600">{activeVentStats.max}</span>
+                    <span className="font-semibold text-red-600">{activeVentStats.max} {unit}</span>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold text-blue-600">{activeVentStats.min}</span>
+                    <span className="font-semibold text-blue-600">{activeVentStats.min} {unit}</span>
                   </td>
                   <td className="py-2 px-2">
-                    <span className="font-semibold text-green-600">{activeVentStats.avg}</span>
+                    <span className="font-semibold text-green-600">{activeVentStats.avg} {unit}</span>
                   </td>
                   <td className="py-2 px-2 text-blue-600">활성</td>
                 </tr>
