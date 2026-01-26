@@ -30,10 +30,6 @@ const FarmSummaryFilters = dynamic(
     loading: () => <div className="h-12 w-full" />,
   }
 );
-const KpiCards = dynamic(() => import("@/components/farms/KpiCards"), {
-  ssr: false,
-  loading: () => <KpiCardsSkeleton />,
-});
 const OfflineBanner = dynamic(() => import("@/components/farms/OfflineBanner"), {
   ssr: false,
   loading: () => <div className="h-16 w-full" />,
@@ -615,12 +611,6 @@ export default function FarmsPage() {
                 totalRooms={totalRooms}
               />
             </div>
-            <KpiCards
-              normal={totalNormal}
-              warn={totalWarn}
-              danger={totalDanger}
-              offline={totalOffline}
-            />
             <StatusPieChart
               title="상태 분포"
               data={statusPieData}

@@ -57,7 +57,11 @@ async function fetchHistory(range: string, states: string[]) {
   return res.json() as Promise<HistoryResponse>;
 }
 
-export default function AlertsHistoryPanel() {
+interface AlertsHistoryPanelProps {
+  registNo?: string;
+}
+
+export default function AlertsHistoryPanel({ registNo }: AlertsHistoryPanelProps) {
   const router = useRouter();
   const [range, setRange] = useState<(typeof rangeOptions)[number]["id"]>("6h");
   const [selectedStates, setSelectedStates] = useState<string[]>([
@@ -74,12 +78,16 @@ export default function AlertsHistoryPanel() {
   });
 
   const items = data?.items ?? [];
+  const scopedItems = useMemo(
+    () => (registNo ? items.filter((item) => item.registNo === registNo) : items),
+    [items, registNo]
+  );
   const pageSize = 10;
-  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(scopedItems.length / pageSize));
   const currentPage = Math.min(page, totalPages);
   const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, items.length);
-  const pagedItems = items.slice(startIndex, endIndex);
+  const endIndex = Math.min(startIndex + pageSize, scopedItems.length);
+  const pagedItems = scopedItems.slice(startIndex, endIndex);
 
   useEffect(() => {
     setPage(1);
@@ -151,7 +159,7 @@ export default function AlertsHistoryPanel() {
         {isLoading && (
           <div className="text-sm text-muted-foreground">불러오는 중...</div>
         )}
-        {!isLoading && items.length === 0 ? (
+        {!isLoading && scopedItems.length === 0 ? (
           <EmptyState
             title="이력 데이터가 없습니다"
             description="선택한 조건에 해당하는 이력이 없습니다."
@@ -161,7 +169,7 @@ export default function AlertsHistoryPanel() {
           <div className="space-y-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-xs text-muted-foreground">
-                {startIndex + 1}-{endIndex} / {items.length} 표시
+                {startIndex + 1}-{endIndex} / {scopedItems.length} 표시
               </div>
               <div className="flex items-center gap-2">
                 <Button

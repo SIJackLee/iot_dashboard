@@ -13,6 +13,7 @@ import RoomGrid from "@/components/rooms/RoomGrid";
 import RoomDetailDrawer from "@/components/rooms/RoomDetailDrawer";
 import KpiCards from "@/components/farms/KpiCards";
 import AlertsPanel from "@/components/farms/AlertsPanel";
+import AlertsHistoryPanel from "@/components/farms/AlertsHistoryPanel";
 import dynamic from "next/dynamic";
 import EmptyState from "@/components/common/EmptyState";
 import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
@@ -59,6 +60,7 @@ export default function FarmDetailPage() {
   const [statusFilter, setStatusFilter] = useState<StatusKey[]>([]);
   const [denseRooms, setDenseRooms] = useState(false);
   const [highlightedRooms, setHighlightedRooms] = useState<Set<string>>(new Set());
+  const [alertsView, setAlertsView] = useState<"history" | "current">("history");
   const prevRoomsRef = useRef<Map<string, string>>(new Map());
   const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
   const handleStatusSelect = (id: StatusKey) => {
@@ -316,13 +318,35 @@ export default function FarmDetailPage() {
             icon={<AlertTriangle className="h-5 w-5 text-muted-foreground" />}
           />
         )}
-        <AlertsPanel
-          rooms={allRooms}
-          onSelect={handleRoomClick}
-          stateFilter={statusFilter}
-          defaultCollapsed
-          highlightKey12s={highlightedRooms}
-        />
+        <div className="mt-6 space-y-3">
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={alertsView === "history" ? "default" : "outline"}
+              onClick={() => setAlertsView("history")}
+            >
+              과거 이력
+            </Button>
+            <Button
+              size="sm"
+              variant={alertsView === "current" ? "default" : "outline"}
+              onClick={() => setAlertsView("current")}
+            >
+              현재 알림
+            </Button>
+          </div>
+          {alertsView === "history" ? (
+            <AlertsHistoryPanel registNo={registNo} />
+          ) : (
+            <AlertsPanel
+              rooms={allRooms}
+              onSelect={handleRoomClick}
+              stateFilter={statusFilter}
+              defaultCollapsed
+              highlightKey12s={highlightedRooms}
+            />
+          )}
+        </div>
         {drawerOpen && (
           <RoomDetailDrawer room={roomFull} onClose={handleCloseDrawer} />
         )}
