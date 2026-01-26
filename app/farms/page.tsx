@@ -8,6 +8,9 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Inbox, SearchX } from "lucide-react";
 import dynamic from "next/dynamic";
 import EmptyState from "@/components/common/EmptyState";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import LoadingTips from "@/components/common/LoadingTips";
+import LoadingProgress from "@/components/common/LoadingProgress";
 import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
 import FarmSummaryTableSkeleton from "@/components/skeletons/FarmSummaryTableSkeleton";
 import { Badge } from "@/components/ui/badge";
@@ -332,13 +335,25 @@ export default function FarmsPage() {
         <TopBar />
         <main className="container mx-auto px-4 py-6">
           <h1 className="text-2xl font-bold mb-6">농장 목록</h1>
-          <div className="bg-white rounded-lg shadow-sm border mb-4 p-4">
-            <Skeleton className="h-4 w-32 mb-2" />
+          
+          {/* 로딩 팁 */}
+          <LoadingTips />
+          
+          {/* 로딩 진행 상태 */}
+          <LoadingProgress isLoading={isLoading} estimatedTime={10} />
+          
+          {/* 로딩 스피너 및 메시지 */}
+          <div className="mb-6">
+            <LoadingSpinner message="데이터를 불러오는 중..." size="md" />
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm border mb-4 p-4 animate-pulse">
+            <Skeleton className="h-4 w-32 mb-2 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer" />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer" />
+              <Skeleton className="h-10 w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer" />
+              <Skeleton className="h-10 w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer" />
+              <Skeleton className="h-10 w-full bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer" />
             </div>
           </div>
           <KpiCardsSkeleton />
