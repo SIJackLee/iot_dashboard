@@ -20,7 +20,7 @@ const FarmSummaryCards = memo(function FarmSummaryCards({
   highlightRegistNos,
 }: FarmSummaryCardsProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 sm:space-y-3">
       {items.map((item) => {
         const state: "normal" | "warn" | "danger" | "offline" =
           item.offline > 0
@@ -78,14 +78,14 @@ const FarmSummaryCards = memo(function FarmSummaryCards({
               {/* 모바일: 핵심 정보만 (위험/오프라인 수) */}
               <div className="sm:hidden space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-red-700 font-medium">위험:</span>
-                  <span className="text-red-700 font-semibold">{item.danger}</span>
+                  <span className="text-red-700 font-medium text-left">위험:</span>
+                  <span className="text-red-700 font-semibold text-right">{item.danger}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-700 font-medium">오프라인:</span>
-                  <span className="text-gray-700 font-semibold">{item.offline}</span>
+                  <span className="text-gray-700 font-medium text-left">오프라인:</span>
+                  <span className="text-gray-700 font-semibold text-right">{item.offline}</span>
                 </div>
-                <div className="pt-2 border-t">
+                <div className="pt-2 border-t flex justify-center">
                   <Badge
                     variant={state === "danger" ? "destructive" : "outline"}
                     className={

@@ -114,7 +114,7 @@ export default function AlertsTogglePanel({
       {view === "current" && (
         <div className="space-y-3">
           {/* 모바일: 핵심 필터만 (위험/오프라인) */}
-          <div className="sm:hidden flex flex-wrap items-center gap-2">
+          <div className="sm:hidden flex flex-wrap items-center gap-1.5 justify-start">
             {statusMeta
               .filter((s) => s.id === "danger" || s.id === "offline")
               .map((s) => (
@@ -123,7 +123,7 @@ export default function AlertsTogglePanel({
                   size="sm"
                   variant={stateFilter?.includes(s.id) ? "default" : "outline"}
                   onClick={() => onToggleStatus?.(s.id)}
-                  className="text-xs"
+                  className="text-xs min-h-[44px] h-auto px-3 py-2"
                 >
                   {s.label} {s.count > 0 && `(${s.count})`}
                 </Button>
@@ -139,7 +139,7 @@ export default function AlertsTogglePanel({
                     onSearchChange(searchValue);
                   }
                 }}
-                className="text-xs"
+                className="text-xs min-h-[44px] h-auto px-3 py-2"
               >
                 검색
               </Button>
@@ -189,20 +189,21 @@ export default function AlertsTogglePanel({
                     endIndex !== undefined &&
                     totalItems !== undefined && (
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-muted-foreground text-left sm:text-left">
                           {startIndex + 1}-{endIndex} / {totalItems} 표시
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-end sm:justify-end">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
                             disabled={currentPage <= 1}
                             aria-label="이전 10개"
+                            className="min-h-[44px] h-auto px-3 py-2"
                           >
                             <ChevronLeft className="h-4 w-4" />
                           </Button>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground text-center min-w-[60px]">
                             {currentPage} / {totalPages}
                           </span>
                           <Button
@@ -211,6 +212,7 @@ export default function AlertsTogglePanel({
                             onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
                             disabled={currentPage >= totalPages}
                             aria-label="다음 10개"
+                            className="min-h-[44px] h-auto px-3 py-2"
                           >
                             <ChevronRight className="h-4 w-4" />
                           </Button>
