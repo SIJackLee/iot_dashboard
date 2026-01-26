@@ -20,6 +20,21 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
     return Math.max(...arr);
   };
 
+  const getStats = (arr: number[] | null) => {
+    if (!arr || arr.length === 0) return { max: 0, min: 0, avg: 0 };
+    const max = Math.max(...arr);
+    const min = Math.min(...arr);
+    const avg = Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10;
+    return { max, min, avg };
+  };
+
+  const getMotorValueColor = (value: number) => {
+    // 모터 RPM 기준 (예: 0-500: 회색, 500-1000: 파랑, 1000+: 초록)
+    if (value === 0) return "text-gray-400 bg-gray-50 border-gray-200";
+    if (value < 500) return "text-blue-600 bg-blue-50 border-blue-200";
+    return "text-green-600 bg-green-50 border-green-200";
+  };
+
   return (
     <div>
       <h3 className="font-semibold mb-2 text-sm sm:text-base">모터 데이터</h3>
@@ -33,53 +48,183 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg border p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-medium text-sm">{motorLabel("ec01")}</span>
-            <span className="text-green-600 text-xs">활성</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500">최대값</span>
-            <span className="font-semibold text-base">{getMaxValue(motors.ec01)}</span>
-          </div>
-        </div>
+        {(() => {
+          const ec01Stats = getStats(motors.ec01);
+          return (
+            <div className="bg-white rounded-lg border p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-sm">{motorLabel("ec01")}</span>
+                <span className="text-green-600 text-xs">활성</span>
+              </div>
+              
+              {/* 통계 요약 */}
+              <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
+                <div className="text-center">
+                  <div className="text-xs text-gray-500">최대</div>
+                  <div className="font-semibold text-sm text-red-600">{ec01Stats.max}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-500">최소</div>
+                  <div className="font-semibold text-sm text-blue-600">{ec01Stats.min}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-500">평균</div>
+                  <div className="font-semibold text-sm text-green-600">{ec01Stats.avg}</div>
+                </div>
+              </div>
+              
+              {/* 배열 값 배지 */}
+              <div className="grid grid-cols-2 gap-1.5">
+                {motors.ec01.map((val, idx) => (
+                  <div
+                    key={idx}
+                    className={`rounded px-2 py-1 text-xs border ${getMotorValueColor(val)}`}
+                  >
+                    <span className="text-gray-500">#{idx + 1}</span>
+                    <span className="ml-1 font-semibold">{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         
-        <div className="bg-white rounded-lg border p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-medium text-sm">{motorLabel("ec02")}</span>
-            <span className={`text-xs ${motors.ventMode === "exhaust" ? "text-green-600" : "text-gray-400"}`}>
-              {motors.ventMode === "exhaust" ? "활성" : "비활성"}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500">최대값</span>
-            <span className="font-semibold text-base">{motors.ec02 ? getMaxValue(motors.ec02) : "-"}</span>
-          </div>
-        </div>
+        {(() => {
+          const ec02Stats = motors.ec02 ? getStats(motors.ec02) : null;
+          return (
+            <div className="bg-white rounded-lg border p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-sm">{motorLabel("ec02")}</span>
+                <span className={`text-xs ${motors.ventMode === "exhaust" ? "text-green-600" : "text-gray-400"}`}>
+                  {motors.ventMode === "exhaust" ? "활성" : "비활성"}
+                </span>
+              </div>
+              {ec02Stats && motors.ec02 ? (
+                <>
+                  {/* 통계 요약 */}
+                  <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">최대</div>
+                      <div className="font-semibold text-sm text-red-600">{ec02Stats.max}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">최소</div>
+                      <div className="font-semibold text-sm text-blue-600">{ec02Stats.min}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">평균</div>
+                      <div className="font-semibold text-sm text-green-600">{ec02Stats.avg}</div>
+                    </div>
+                  </div>
+                  
+                  {/* 배열 값 배지 */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {motors.ec02.map((val, idx) => (
+                      <div
+                        key={idx}
+                        className={`rounded px-2 py-1 text-xs border ${getMotorValueColor(val)}`}
+                      >
+                        <span className="text-gray-500">#{idx + 1}</span>
+                        <span className="ml-1 font-semibold">{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-gray-400 text-center py-2">null</div>
+              )}
+            </div>
+          );
+        })()}
         
-        <div className="bg-white rounded-lg border p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-medium text-sm">{motorLabel("ec03")}</span>
-            <span className={`text-xs ${motors.ventMode === "intake" ? "text-green-600" : "text-gray-400"}`}>
-              {motors.ventMode === "intake" ? "활성" : "비활성"}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500">최대값</span>
-            <span className="font-semibold text-base">{motors.ec03 ? getMaxValue(motors.ec03) : "-"}</span>
-          </div>
-        </div>
+        {(() => {
+          const ec03Stats = motors.ec03 ? getStats(motors.ec03) : null;
+          return (
+            <div className="bg-white rounded-lg border p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-sm">{motorLabel("ec03")}</span>
+                <span className={`text-xs ${motors.ventMode === "intake" ? "text-green-600" : "text-gray-400"}`}>
+                  {motors.ventMode === "intake" ? "활성" : "비활성"}
+                </span>
+              </div>
+              {ec03Stats && motors.ec03 ? (
+                <>
+                  {/* 통계 요약 */}
+                  <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">최대</div>
+                      <div className="font-semibold text-sm text-red-600">{ec03Stats.max}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">최소</div>
+                      <div className="font-semibold text-sm text-blue-600">{ec03Stats.min}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-gray-500">평균</div>
+                      <div className="font-semibold text-sm text-green-600">{ec03Stats.avg}</div>
+                    </div>
+                  </div>
+                  
+                  {/* 배열 값 배지 */}
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {motors.ec03.map((val, idx) => (
+                      <div
+                        key={idx}
+                        className={`rounded px-2 py-1 text-xs border ${getMotorValueColor(val)}`}
+                      >
+                        <span className="text-gray-500">#{idx + 1}</span>
+                        <span className="ml-1 font-semibold">{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-gray-400 text-center py-2">null</div>
+              )}
+            </div>
+          );
+        })()}
         
-        <div className="bg-white rounded-lg border p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-medium text-sm">{ACTIVE_VENT_LABEL}</span>
-            <span className="text-blue-600 text-xs">활성</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500">최대값</span>
-            <span className="font-semibold text-base">{getMaxValue(motors.activeVent)}</span>
-          </div>
-        </div>
+        {(() => {
+          const activeVentStats = getStats(motors.activeVent);
+          return (
+            <div className="bg-white rounded-lg border p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-medium text-sm">{ACTIVE_VENT_LABEL}</span>
+                <span className="text-blue-600 text-xs">활성</span>
+              </div>
+              
+              {/* 통계 요약 */}
+              <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
+                <div className="text-center">
+                  <div className="text-xs text-gray-500">최대</div>
+                  <div className="font-semibold text-sm text-red-600">{activeVentStats.max}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-500">최소</div>
+                  <div className="font-semibold text-sm text-blue-600">{activeVentStats.min}</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-gray-500">평균</div>
+                  <div className="font-semibold text-sm text-green-600">{activeVentStats.avg}</div>
+                </div>
+              </div>
+              
+              {/* 배열 값 배지 */}
+              <div className="grid grid-cols-2 gap-1.5">
+                {motors.activeVent.map((val, idx) => (
+                  <div
+                    key={idx}
+                    className={`rounded px-2 py-1 text-xs border ${getMotorValueColor(val)}`}
+                  >
+                    <span className="text-gray-500">#{idx + 1}</span>
+                    <span className="ml-1 font-semibold">{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
       
       {/* PC: 테이블 레이아웃 */}
@@ -93,63 +238,153 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
             <tr className="border-b">
               <th className="text-left py-2 px-2">모터</th>
               <th className="text-left py-2 px-2">값 (배열)</th>
-              <th className="text-left py-2 px-2">최대값</th>
+              <th className="text-left py-2 px-2">최대</th>
+              <th className="text-left py-2 px-2">최소</th>
+              <th className="text-left py-2 px-2">평균</th>
               <th className="text-left py-2 px-2">상태</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b">
-              <td className="py-2 px-2 font-medium">{motorLabel("ec01")}</td>
-              <td className="py-2 px-2 text-sm text-gray-600">
-                [{motors.ec01.join(", ")}]
-              </td>
-              <td className="py-2 px-2 font-semibold">
-                {getMaxValue(motors.ec01)}
-              </td>
-              <td className="py-2 px-2 text-green-600">활성</td>
-            </tr>
-            <tr className="border-b">
-              <td className="py-2 px-2 font-medium">{motorLabel("ec02")}</td>
-              <td className="py-2 px-2 text-sm text-gray-600">
-                {motors.ec02 ? `[${motors.ec02.join(", ")}]` : "null"}
-              </td>
-              <td className="py-2 px-2 font-semibold">
-                {motors.ec02 ? getMaxValue(motors.ec02) : "-"}
-              </td>
-              <td className="py-2 px-2">
-                {motors.ventMode === "exhaust" ? (
-                  <span className="text-green-600">활성</span>
-                ) : (
-                  <span className="text-gray-400">비활성</span>
-                )}
-              </td>
-            </tr>
-            <tr className="border-b">
-              <td className="py-2 px-2 font-medium">{motorLabel("ec03")}</td>
-              <td className="py-2 px-2 text-sm text-gray-600">
-                {motors.ec03 ? `[${motors.ec03.join(", ")}]` : "null"}
-              </td>
-              <td className="py-2 px-2 font-semibold">
-                {motors.ec03 ? getMaxValue(motors.ec03) : "-"}
-              </td>
-              <td className="py-2 px-2">
-                {motors.ventMode === "intake" ? (
-                  <span className="text-green-600">활성</span>
-                ) : (
-                  <span className="text-gray-400">비활성</span>
-                )}
-              </td>
-            </tr>
-            <tr>
-              <td className="py-2 px-2 font-medium">{ACTIVE_VENT_LABEL}</td>
-              <td className="py-2 px-2 text-sm text-gray-600">
-                [{motors.activeVent.join(", ")}]
-              </td>
-              <td className="py-2 px-2 font-semibold">
-                {getMaxValue(motors.activeVent)}
-              </td>
-              <td className="py-2 px-2 text-blue-600">활성</td>
-            </tr>
+            {(() => {
+              const ec01Stats = getStats(motors.ec01);
+              return (
+                <tr className="border-b">
+                  <td className="py-2 px-2 font-medium">{motorLabel("ec01")}</td>
+                  <td className="py-2 px-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {motors.ec01.map((val, idx) => (
+                        <span
+                          key={idx}
+                          className={`rounded px-2 py-0.5 text-xs border ${getMotorValueColor(val)}`}
+                        >
+                          #{idx + 1}: {val}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold text-red-600">{ec01Stats.max}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold text-blue-600">{ec01Stats.min}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold text-green-600">{ec01Stats.avg}</span>
+                  </td>
+                  <td className="py-2 px-2 text-green-600">활성</td>
+                </tr>
+              );
+            })()}
+            {(() => {
+              const ec02Stats = motors.ec02 ? getStats(motors.ec02) : null;
+              return (
+                <tr className="border-b">
+                  <td className="py-2 px-2 font-medium">{motorLabel("ec02")}</td>
+                  <td className="py-2 px-2">
+                    {ec02Stats && motors.ec02 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {motors.ec02.map((val, idx) => (
+                          <span
+                            key={idx}
+                            className={`rounded px-2 py-0.5 text-xs border ${getMotorValueColor(val)}`}
+                          >
+                            #{idx + 1}: {val}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">null</span>
+                    )}
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold">{ec02Stats ? ec02Stats.max : "-"}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold">{ec02Stats ? ec02Stats.min : "-"}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold">{ec02Stats ? ec02Stats.avg : "-"}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    {motors.ventMode === "exhaust" ? (
+                      <span className="text-green-600">활성</span>
+                    ) : (
+                      <span className="text-gray-400">비활성</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })()}
+            {(() => {
+              const ec03Stats = motors.ec03 ? getStats(motors.ec03) : null;
+              return (
+                <tr className="border-b">
+                  <td className="py-2 px-2 font-medium">{motorLabel("ec03")}</td>
+                  <td className="py-2 px-2">
+                    {ec03Stats && motors.ec03 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {motors.ec03.map((val, idx) => (
+                          <span
+                            key={idx}
+                            className={`rounded px-2 py-0.5 text-xs border ${getMotorValueColor(val)}`}
+                          >
+                            #{idx + 1}: {val}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">null</span>
+                    )}
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold">{ec03Stats ? ec03Stats.max : "-"}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold">{ec03Stats ? ec03Stats.min : "-"}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold">{ec03Stats ? ec03Stats.avg : "-"}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    {motors.ventMode === "intake" ? (
+                      <span className="text-green-600">활성</span>
+                    ) : (
+                      <span className="text-gray-400">비활성</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })()}
+            {(() => {
+              const activeVentStats = getStats(motors.activeVent);
+              return (
+                <tr>
+                  <td className="py-2 px-2 font-medium">{ACTIVE_VENT_LABEL}</td>
+                  <td className="py-2 px-2">
+                    <div className="flex flex-wrap gap-1.5">
+                      {motors.activeVent.map((val, idx) => (
+                        <span
+                          key={idx}
+                          className={`rounded px-2 py-0.5 text-xs border ${getMotorValueColor(val)}`}
+                        >
+                          #{idx + 1}: {val}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold text-red-600">{activeVentStats.max}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold text-blue-600">{activeVentStats.min}</span>
+                  </td>
+                  <td className="py-2 px-2">
+                    <span className="font-semibold text-green-600">{activeVentStats.avg}</span>
+                  </td>
+                  <td className="py-2 px-2 text-blue-600">활성</td>
+                </tr>
+              );
+            })()}
           </tbody>
         </table>
       </div>
