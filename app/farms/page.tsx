@@ -221,8 +221,17 @@ export default function FarmsPage() {
     setPage(1);
   }, [debouncedSearch, sortBy, sortDir, statusFilter.join(",")]);
 
+  // 전체 농장 수 (필터/검색이 없을 때는 totalCount 사용)
+  const totalFarmCount = allData?.totalCount ?? data?.totalCount ?? undefined;
+  const hasActiveFilters = debouncedSearch || statusFilter.length > 0;
+  
+  // totalItems: 필터/검색이 있으면 filteredItems.length, 없으면 totalCount 사용
+  const totalItems = hasActiveFilters 
+    ? filteredItems.length 
+    : (totalFarmCount ?? filteredItems.length);
+  
   const pageSize = 10;
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const currentPage = Math.min(page, totalPages);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, filteredItems.length);
@@ -481,7 +490,7 @@ export default function FarmsPage() {
             onPageChange={setPage}
             startIndex={startIndex}
             endIndex={endIndex}
-            totalItems={filteredItems.length}
+            totalItems={totalItems}
           />
           )}
         </div>
