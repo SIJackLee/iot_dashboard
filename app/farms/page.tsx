@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FarmsSummaryResponseDTO } from "@/types/dto";
+import AlertsHistoryPanel from "@/components/farms/AlertsHistoryPanel";
 
 const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
   ssr: false,
@@ -479,6 +480,7 @@ export default function FarmsPage() {
           danger={totalDanger}
           offline={totalOffline}
         />
+        <AlertsHistoryPanel />
         {filteredItems.length === 0 ? (
           <EmptyState
             title={

@@ -1,0 +1,174 @@
+// AlertsHistoryPanel 컴포넌트 - 과거 경고/위험/오프라인 목록
+
+"use client";
+
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, Clock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import EmptyState from "@/components/common/EmptyState";
+import { roomLabel, stallLabel, FARM_LABEL } from "@/lib/labels";
+
+type HistoryItem = {
+  key12: string;
+  registNo: string;
+  stallNo: number;
+  roomNo: number;
+  state: "warn" | "danger" | "offline";
+  occurredAtKst: string;
+  maxValues: {
+    es01: number;
+    es02: number;
+    es03: number;
+    es04: number;
+    es09: number;
+  };
+};
+
+type HistoryResponse = {
+  serverNowKst: string;
+  items: HistoryItem[];
+};
+
+const rangeOptions = [
+  { id: "1h", label: "최근 1시간" },
+  { id: "6h", label: "최근 6시간" },
+  { id: "24h", label: "최근 24시간" },
+] as const;
+
+const stateMeta = [
+  { id: "warn", label: "경고", variant: "outline" },
+  { id: "danger", label: "위험", variant: "destructive" },
+  { id: "offline", label: "오프라인", variant: "outline" },
+] as const;
+
+async function fetchHistory(range: string, states: string[]) {
+  const params = new URLSearchParams();
+  params.set("range", range);
+  params.set("limit", "50");
+  params.set("states", states.join(","));
+  const res = await fetch(`/api/alerts/history?${params.toString()}`);
+  if (!res.ok) {
+    throw new Error("Failed to fetch alerts history");
+  }
+  return res.json() as Promise<HistoryResponse>;
+}
+
+export default function AlertsHistoryPanel() {
+  const [range, setRange] = useState<(typeof rangeOptions)[number]["id"]>("6h");
+  const [selectedStates, setSelectedStates] = useState<string[]>([
+    "warn",
+    "danger",
+    "offline",
+  ]);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["alerts-history", range, selectedStates],
+    queryFn: () => fetchHistory(range, selectedStates),
+    refetchInterval: 60000,
+  });
+
+  const items = data?.items ?? [];
+  const badgeVariant = (state: string) => {
+    if (state === "danger") return "destructive";
+    return "outline";
+  };
+
+  const maxLabel = useMemo(() => {
+    if (items.length === 0) return "N/A";
+    const top = items[0].maxValues;
+    return `ES03 ${top.es03}`;
+  }, [items]);
+
+  return (
+    <Card className="mt-6">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <CardTitle className="flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          과거 경고/위험/오프라인 목록
+        </CardTitle>
+        <div className="flex flex-wrap items-center gap-2">
+          {rangeOptions.map((option) => (
+            <Button
+              key={option.id}
+              size="sm"
+              variant={range === option.id ? "default" : "outline"}
+              onClick={() => setRange(option.id)}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-wrap items-center gap-2 mb-3 text-xs text-muted-foreground">
+          {stateMeta.map((state) => (
+            <Button
+              key={state.id}
+              size="sm"
+              variant={selectedStates.includes(state.id) ? "default" : "outline"}
+              onClick={() =>
+                setSelectedStates((prev) =>
+                  prev.includes(state.id)
+                    ? prev.filter((s) => s !== state.id)
+                    : [...prev, state.id]
+                )
+              }
+            >
+              {state.label}
+            </Button>
+          ))}
+          <span className="flex items-center gap-1">
+            <Clock className="h-3.5 w-3.5" /> 기준: {maxLabel}
+          </span>
+        </div>
+        {error && (
+          <div className="text-sm text-red-600 mb-2">
+            목록을 불러오지 못했습니다.
+          </div>
+        )}
+        {isLoading && (
+          <div className="text-sm text-muted-foreground">불러오는 중...</div>
+        )}
+        {!isLoading && items.length === 0 ? (
+          <EmptyState
+            title="이력 데이터가 없습니다"
+            description="선택한 조건에 해당하는 이력이 없습니다."
+            icon={<AlertTriangle className="h-5 w-5 text-muted-foreground" />}
+          />
+        ) : (
+          <div className="space-y-2">
+            {items.map((item) => (
+              <div
+                key={`${item.key12}-${item.occurredAtKst}`}
+                className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <Badge variant={badgeVariant(item.state)}>
+                    {item.state.toUpperCase()}
+                  </Badge>
+                  <div className="text-sm">
+                    <div className="font-medium">
+                      {FARM_LABEL} {item.registNo} · {stallLabel(item.stallNo)} ·{" "}
+                      {roomLabel(item.roomNo)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(item.occurredAtKst).toLocaleString("ko-KR")}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  ES01 {item.maxValues.es01} · ES02 {item.maxValues.es02} · ES03{" "}
+                  {item.maxValues.es03} · ES04 {item.maxValues.es04} · ES09{" "}
+                  {item.maxValues.es09}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
