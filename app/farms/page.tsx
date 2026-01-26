@@ -13,8 +13,6 @@ import LoadingTips from "@/components/common/LoadingTips";
 import LoadingProgress from "@/components/common/LoadingProgress";
 import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
 import FarmSummaryTableSkeleton from "@/components/skeletons/FarmSummaryTableSkeleton";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FarmsSummaryResponseDTO } from "@/types/dto";
@@ -114,13 +112,13 @@ export default function FarmsPage() {
     const onIdle = () => {
       if (!cancelled) setShowDeferred(true);
     };
-    const idleCallback = (window as any).requestIdleCallback;
+    const idleCallback = window.requestIdleCallback;
     let handle: number;
     if (typeof idleCallback === "function") {
       handle = idleCallback(onIdle, { timeout: 200 });
       return () => {
         cancelled = true;
-        (window as any).cancelIdleCallback?.(handle);
+        window.cancelIdleCallback?.(handle);
       };
     }
     handle = window.setTimeout(onIdle, 200);
@@ -137,13 +135,13 @@ export default function FarmsPage() {
     const onIdle = () => {
       if (!cancelled) setShowAlertsPanel(true);
     };
-    const idleCallback = (window as any).requestIdleCallback;
+    const idleCallback = window.requestIdleCallback;
     let handle: number;
     if (typeof idleCallback === "function") {
       handle = idleCallback(onIdle, { timeout: 500 });
       return () => {
         cancelled = true;
-        (window as any).cancelIdleCallback?.(handle);
+        window.cancelIdleCallback?.(handle);
       };
     }
     handle = window.setTimeout(onIdle, 500);
@@ -206,15 +204,14 @@ export default function FarmsPage() {
         return statusFilter.includes(state);
       })
     : baseItems;
+  const resetPage = () => setPage(1);
+
   const handleStatusSelect = (id: StatusKey) => {
     setStatusFilter((prev) =>
       prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]
     );
+    resetPage();
   };
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, sortBy, sortDir, statusFilter.join(",")]);
 
   // 전체 농장 수 (필터/검색이 없을 때는 totalCount 사용)
   const totalFarmCount = data?.totalCount ?? undefined;
@@ -232,11 +229,6 @@ export default function FarmsPage() {
   const endIndex = Math.min(startIndex + pageSize, filteredItems.length);
   const pagedItems = filteredItems.slice(startIndex, endIndex);
 
-  useEffect(() => {
-    if (page !== currentPage) {
-      setPage(currentPage);
-    }
-  }, [page, currentPage]);
 
   useEffect(() => {
     if (!data) return;
@@ -252,6 +244,7 @@ export default function FarmsPage() {
     }
     prevSnapshotRef.current = nextMap;
     if (changed.size > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHighlighted(changed);
       if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
       highlightTimerRef.current = setTimeout(() => {
@@ -299,12 +292,6 @@ export default function FarmsPage() {
     { id: "offline", label: "오프라인", count: totalOffline },
   ] as const;
 
-  const statusLabel: Record<string, string> = {
-    normal: "정상",
-    warn: "경고",
-    danger: "위험",
-    offline: "오프라인",
-  };
   const sortLabel: Record<string, string> = {
     registNo: "농장",
     totalRooms: "총 방",
@@ -323,10 +310,35 @@ export default function FarmsPage() {
   const handleSortChange = (key: string) => {
     if (key === sortBy) {
       setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+      resetPage();
       return;
     }
     setSortBy(key);
     setSortDir(defaultSortDir[key] ?? "desc");
+    resetPage();
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    resetPage();
+  };
+
+  const handleClearStatus = () => {
+    setStatusFilter([]);
+    resetPage();
+  };
+
+  const handleSelectAllStatus = () => {
+    setStatusFilter(["normal", "warn", "danger", "offline"]);
+    resetPage();
+  };
+
+  const handleResetFilters = () => {
+    setStatusFilter([]);
+    setSearch("");
+    setSortBy("registNo");
+    setSortDir("asc");
+    resetPage();
   };
 
   // 조건부 return
@@ -441,21 +453,14 @@ export default function FarmsPage() {
               count: s.count,
             }))}
             onToggleStatus={(id) => handleStatusSelect(id as StatusKey)}
-            onSelectAllStatus={() =>
-              setStatusFilter(["normal", "warn", "danger", "offline"])
-            }
-            onClearStatus={() => setStatusFilter([])}
+            onSelectAllStatus={handleSelectAllStatus}
+            onClearStatus={handleClearStatus}
             debouncedSearch={debouncedSearch}
             sortLabel={sortLabel}
             sortBy={sortBy}
             sortDir={sortDir}
-            onResetFilters={() => {
-              setStatusFilter([]);
-              setSearch("");
-              setSortBy("registNo");
-              setSortDir("asc");
-            }}
-            onSearchChange={setSearch}
+            onResetFilters={handleResetFilters}
+            onSearchChange={handleSearchChange}
             onSortChange={handleSortChange}
             visibleColumns={visibleColumns}
             onToggleColumn={(key) =>
@@ -489,11 +494,7 @@ export default function FarmsPage() {
             emptyStateActionLabel={search ? "필터 초기화" : undefined}
             onEmptyStateAction={
               search
-                ? () => {
-                    setSearch("");
-                    setStatusFilter([]);
-                    setSortBy("registNo");
-                  }
+                ? handleResetFilters
                 : undefined
             }
             currentPage={currentPage}

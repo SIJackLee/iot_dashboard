@@ -127,7 +127,6 @@ const FarmSummaryTable = memo(function FarmSummaryTable({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {items.map((item) => {
-            const total = item.normal + item.warn + item.danger + item.offline;
             const state: "normal" | "warn" | "danger" | "offline" =
               item.offline > 0
                 ? "offline"

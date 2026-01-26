@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -77,7 +77,7 @@ export default function AlertsHistoryPanel({ registNo }: AlertsHistoryPanelProps
     refetchInterval: 60000,
   });
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
   const scopedItems = useMemo(
     () => (registNo ? items.filter((item) => item.registNo === registNo) : items),
     [items, registNo]
@@ -89,15 +89,17 @@ export default function AlertsHistoryPanel({ registNo }: AlertsHistoryPanelProps
   const endIndex = Math.min(startIndex + pageSize, scopedItems.length);
   const pagedItems = scopedItems.slice(startIndex, endIndex);
 
-  useEffect(() => {
+  const handleRangeChange = (nextRange: (typeof rangeOptions)[number]["id"]) => {
+    setRange(nextRange);
     setPage(1);
-  }, [range, selectedStates.join(",")]);
+  };
 
-  useEffect(() => {
-    if (page !== currentPage) {
-      setPage(currentPage);
-    }
-  }, [page, currentPage]);
+  const toggleState = (stateId: string) => {
+    setSelectedStates((prev) =>
+      prev.includes(stateId) ? prev.filter((s) => s !== stateId) : [...prev, stateId]
+    );
+    setPage(1);
+  };
   const badgeVariant = (state: string) => {
     if (state === "danger") return "destructive";
     return "outline";
@@ -122,7 +124,7 @@ export default function AlertsHistoryPanel({ registNo }: AlertsHistoryPanelProps
               key={option.id}
               size="sm"
               variant={range === option.id ? "default" : "outline"}
-              onClick={() => setRange(option.id)}
+              onClick={() => handleRangeChange(option.id)}
             >
               {option.label}
             </Button>
@@ -136,13 +138,7 @@ export default function AlertsHistoryPanel({ registNo }: AlertsHistoryPanelProps
               key={state.id}
               size="sm"
               variant={selectedStates.includes(state.id) ? "default" : "outline"}
-              onClick={() =>
-                setSelectedStates((prev) =>
-                  prev.includes(state.id)
-                    ? prev.filter((s) => s !== state.id)
-                    : [...prev, state.id]
-                )
-              }
+              onClick={() => toggleState(state.id)}
             >
               {state.label}
             </Button>

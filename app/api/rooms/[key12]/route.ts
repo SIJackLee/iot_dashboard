@@ -148,11 +148,13 @@ export async function GET(
         "Cache-Control": "public, max-age=3, stale-while-revalidate=3",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: message },
       {
-        status: error.message?.includes("Not Found")
+        status: message.includes("Not Found")
           ? 404
           : 500,
       }

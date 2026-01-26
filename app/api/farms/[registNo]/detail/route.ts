@@ -7,6 +7,14 @@ import { getFarmOfflineThSec } from "@/lib/offlineProfile";
 import { calculateState } from "@/lib/stateRules";
 import type { FarmDetailDTO, StallDetailDTO, RoomSnapshotLiteDTO } from "@/types/dto";
 
+type MappingSelectParams = {
+  select: string;
+  eq: {
+    isind_regist_no: string;
+    stall_no?: number;
+  };
+};
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ registNo: string }> }
@@ -18,7 +26,7 @@ export async function GET(
     const stallNoParam = url.searchParams.get("stallNo");
 
     // mapping rows 조회
-    const selectParams: any = {
+    const selectParams: MappingSelectParams = {
       select:
         "key12,isind_regist_no,stall_no,room_no,vent_mode,blower_count,vent_count",
       eq: { isind_regist_no: registNo },
@@ -198,9 +206,11 @@ export async function GET(
         "Cache-Control": "public, max-age=3, stale-while-revalidate=3",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: message },
       { status: 500 }
     );
   }

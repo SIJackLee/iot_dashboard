@@ -3,7 +3,7 @@
 "use client";
 
 import type { SensorsDTO } from "@/types/dto";
-import { sensorLabel, convertSensorValue, getSensorUnit, isSensorScaleX10 } from "@/lib/labels";
+import { sensorLabel, convertSensorValue, getSensorUnit } from "@/lib/labels";
 
 interface SensorsPanelProps {
   sensors: SensorsDTO;
@@ -20,11 +20,6 @@ const SENSOR_THRESHOLDS: Record<string, { warn: number; danger: number }> = {
 
 export default function SensorsPanel({ sensors }: SensorsPanelProps) {
   const sensorKeys: Array<keyof SensorsDTO> = ["es01", "es02", "es03", "es04", "es09"];
-
-  const getMaxValue = (arr: number[]): number => {
-    if (arr.length === 0) return 0;
-    return Math.max(...arr);
-  };
 
   const getStats = (arr: number[], key: string) => {
     if (arr.length === 0) return { max: 0, min: 0, avg: 0 };

@@ -36,7 +36,7 @@ interface SelectParams {
 /**
  * Supabase 테이블 SELECT 쿼리
  */
-export async function supabaseSelect<T = any>(
+export async function supabaseSelect<T = unknown>(
   table: string,
   params: SelectParams = {}
 ): Promise<T[]> {
@@ -108,9 +108,9 @@ export async function supabaseSelect<T = any>(
 /**
  * Supabase RPC 호출
  */
-export async function supabaseRpc<T = any>(
+export async function supabaseRpc<T = unknown>(
   functionName: string,
-  params: Record<string, any> = {}
+  params: Record<string, unknown> = {}
 ): Promise<T> {
   const url = `${BASE_URL}/rpc/${functionName}`;
 

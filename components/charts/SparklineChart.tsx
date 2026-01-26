@@ -34,12 +34,6 @@ export default function SparklineChart({
     value,
   }));
 
-  // 최소/최대값 계산 (여유 공간을 위해)
-  const minValue = Math.min(...data);
-  const maxValue = Math.max(...data);
-  const range = maxValue - minValue || 1;
-  const padding = range * 0.1; // 10% 여유
-
   return (
     <div style={{ height, width: "100%" }}>
       <ResponsiveContainer width="100%" height={height}>

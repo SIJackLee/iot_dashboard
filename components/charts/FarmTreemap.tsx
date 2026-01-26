@@ -75,8 +75,8 @@ export default function FarmTreemap({ farms, onFarmClick }: FarmTreemapProps) {
               dataKey="size"
               aspectRatio={4 / 3}
               stroke="#fff"
-              onClick={(data: any) => {
-                if (data && data.name && onFarmClick) {
+              onClick={(data: { name?: string } | undefined) => {
+                if (data?.name && onFarmClick) {
                   onFarmClick(data.name);
                 }
               }}

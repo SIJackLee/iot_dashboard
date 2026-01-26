@@ -53,7 +53,6 @@ export default function FarmDetailPage() {
   const params = useParams();
   const registNo = params.registNo as string;
   const [currentStall, setCurrentStall] = useState(1);
-  const [selectedKey12, setSelectedKey12] = useState<string | null>(null);
   const [roomFull, setRoomFull] = useState<RoomSnapshotFullDTO | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   type StatusKey = "normal" | "warn" | "danger" | "offline";
@@ -91,6 +90,7 @@ export default function FarmDetailPage() {
     }
     prevRoomsRef.current = nextMap;
     if (changed.size > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHighlightedRooms(changed);
       if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
       highlightTimerRef.current = setTimeout(() => {
@@ -100,7 +100,6 @@ export default function FarmDetailPage() {
   }, [data]);
 
   const handleRoomClick = async (key12: string) => {
-    setSelectedKey12(key12);
     setDrawerOpen(true);
     try {
       const full = await fetchRoomFull(key12);
@@ -112,7 +111,6 @@ export default function FarmDetailPage() {
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
-    setSelectedKey12(null);
     setRoomFull(null);
   };
 

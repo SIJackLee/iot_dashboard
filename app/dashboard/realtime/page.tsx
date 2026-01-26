@@ -3,15 +3,10 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import dynamic from "next/dynamic";
 import TopBar from "@/components/shell/TopBar";
 import SensorGaugeGrid from "@/components/charts/SensorGaugeGrid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RoomSnapshotFullDTO } from "@/types/dto";
-
-const RoomTrendChart = dynamic(() => import("@/components/charts/RoomTrendChart"), {
-  ssr: false,
-});
 
 async function fetchRoomFull(key12: string): Promise<RoomSnapshotFullDTO> {
   const res = await fetch(`/api/rooms/${key12}`);

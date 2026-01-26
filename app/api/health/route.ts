@@ -10,7 +10,7 @@ export async function GET() {
   try {
     await supabaseSelect("room_raw_snapshot_v3", { limit: 1 });
     dbOk = true;
-  } catch (error) {
+  } catch {
     dbOk = false;
   }
 

@@ -159,7 +159,7 @@ export async function getFarmOfflineThSec(
     }
 
     // 각 key12별로 간격 계산
-    for (const [key12, timestamps] of key12Groups.entries()) {
+    for (const [, timestamps] of key12Groups.entries()) {
       for (let i = 1; i < timestamps.length; i++) {
         const prev = new Date(timestamps[i - 1]);
         const curr = new Date(timestamps[i]);

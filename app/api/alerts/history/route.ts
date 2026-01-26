@@ -34,6 +34,22 @@ type MappingRow = {
   room_no: number;
 };
 
+type HistoryItem = {
+  key12: string;
+  registNo: string;
+  stallNo: number;
+  roomNo: number;
+  state: "normal" | "warn" | "danger" | "offline";
+  occurredAtKst: string;
+  maxValues: {
+    es01: number;
+    es02: number;
+    es03: number;
+    es04: number;
+    es09: number;
+  };
+};
+
 const RANGE_TO_MIN: Record<string, number> = {
   "1h": 60,
   "6h": 360,
@@ -98,7 +114,7 @@ export async function GET(request: Request) {
     }
 
     const mappingMap = new Map(mappingRows.map((m) => [m.key12, m]));
-    const items: any[] = [];
+    const items: HistoryItem[] = [];
 
     for (const row of logRows) {
       const mapping = mappingMap.get(row.key12);
@@ -175,9 +191,11 @@ export async function GET(request: Request) {
       serverNowKst: serverNowKst(),
       items: items.slice(0, limit),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: message },
       { status: 500 }
     );
   }

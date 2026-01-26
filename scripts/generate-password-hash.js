@@ -1,7 +1,8 @@
 // 비밀번호 해시 생성 스크립트
 // 사용법: node scripts/generate-password-hash.js <password>
 
-const bcrypt = require('bcryptjs');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const bcrypt = require("bcryptjs");
 
 const password = process.argv[2];
 

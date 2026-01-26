@@ -25,6 +25,7 @@ export default function LoadingProgress({
   const [elapsedTime, setElapsedTime] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (isLoading && startTime === null) {
       setStartTime(Date.now());
@@ -67,6 +68,7 @@ export default function LoadingProgress({
       clearInterval(progressInterval);
     };
   }, [isLoading, currentStage, startTime, progress]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!isLoading && progress >= 100) {
     return null;

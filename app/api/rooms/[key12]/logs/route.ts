@@ -10,6 +10,15 @@ import type {
   MotorsDTO,
 } from "@/types/dto";
 
+type LogsSelectParams = {
+  select: string;
+  eq: { key12: string };
+  order: string;
+  limit: number;
+  gte?: { measure_ts?: string };
+  lte?: { measure_ts?: string };
+};
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ key12: string }> }
@@ -27,7 +36,7 @@ export async function GET(
     const actualLimit = Math.min(Math.max(limit, 1), 300); // 1~300 제한
 
     // 쿼리 파라미터 구성
-    const selectParams: any = {
+    const selectParams: LogsSelectParams = {
       select:
         "key12,measure_ts,created_at,es01,es02,es03,es04,es09,ec01,ec02,ec03",
       eq: { key12 },
@@ -129,9 +138,11 @@ export async function GET(
       items,
       nextCursor,
     } as RoomLogsResponseDTO);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: message },
       { status: 500 }
     );
   }

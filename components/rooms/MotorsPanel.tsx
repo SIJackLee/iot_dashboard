@@ -16,11 +16,6 @@ interface MotorsPanelProps {
 }
 
 export default function MotorsPanel({ motors }: MotorsPanelProps) {
-  const getMaxValue = (arr: number[] | null): number => {
-    if (!arr || arr.length === 0) return 0;
-    return Math.max(...arr);
-  };
-
   const getStats = (arr: number[] | null) => {
     if (!arr || arr.length === 0) return { max: 0, min: 0, avg: 0 };
     const max = Math.max(...arr);
