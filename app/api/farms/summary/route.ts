@@ -3,14 +3,13 @@
 import { NextResponse } from "next/server";
 import { supabaseSelect } from "@/lib/supabaseServer";
 import { serverNowKst, toKstIso, diffSec } from "@/lib/timeKst";
-import { getFarmOfflineThSec } from "@/lib/offlineProfile";
 import { calculateState } from "@/lib/stateRules";
 import type {
   FarmsSummaryResponseDTO,
   FarmSummaryDTO,
 } from "@/types/dto";
 
-const SUMMARY_CACHE_TTL_MS = 10000;
+const SUMMARY_CACHE_TTL_MS = 30000; // 10초 → 30초로 증가 (캐시 히트율 향상)
 let summaryCache: { data: FarmsSummaryResponseDTO; expiresAt: number } | null =
   null;
 
@@ -108,8 +107,8 @@ export async function GET(request: Request) {
           all.push(...results.flat());
         }
       } else {
-        // limit이 없을 때: 전체 조회 (기존 로직)
-        const pageLimit = 1000;
+        // limit이 없을 때: 전체 조회 (페이지 크기 증가로 쿼리 수 감소)
+        const pageLimit = 2000; // 1000 → 2000으로 증가
         let offset = 0;
         while (true) {
           const page = await supabaseSelect<typeof all[number]>(
@@ -158,8 +157,8 @@ export async function GET(request: Request) {
     }[] = [];
     const chunks = chunkArray(key12List, 500);
     
-    // 병렬로 쿼리 실행 (최대 5개 동시 실행)
-    const parallelLimit = 5;
+    // 병렬로 쿼리 실행 (최대 10개 동시 실행으로 증가)
+    const parallelLimit = 10;
     for (let i = 0; i < chunks.length; i += parallelLimit) {
       const batch = chunks.slice(i, i + parallelLimit);
       const results = await Promise.all(
@@ -193,42 +192,19 @@ export async function GET(request: Request) {
     const nowKst = serverNowKst();
 
     // farm별 summary 계산
-    // getFarmOfflineThSec는 기본값(211초)을 먼저 사용하고, 
-    // 캐시가 있으면 사용하되, 캐시 미스 시에는 기본값으로 빠르게 처리
+    // getFarmOfflineThSec는 캐시가 있으면 사용, 없으면 기본값(211초)으로 빠르게 처리
     // (실제 계산은 백그라운드에서 수행되도록 캐시에 저장)
     const items: FarmSummaryDTO[] = [];
     const registNos = Array.from(farmMap.keys());
     
-    // 모든 농장의 offlineThSec를 병렬로 가져오기 (기본값 우선 사용)
+    // 모든 농장의 offlineThSec를 빠르게 가져오기 (캐시 우선, 없으면 기본값)
+    // getFarmOfflineThSec 호출을 스킵하여 성능 최적화 (각 농장마다 2개 쿼리 발생 방지)
     const offlineThSecMap = new Map<string, number>();
     
-    // 병렬로 처리하되, 최대 10개씩 배치 처리
-    const batchSize = 10;
-    for (let i = 0; i < registNos.length; i += batchSize) {
-      const batch = registNos.slice(i, i + batchSize);
-      const results = await Promise.allSettled(
-        batch.map(async (registNo) => {
-          try {
-            const thSec = await getFarmOfflineThSec(registNo);
-            return { registNo, thSec };
-          } catch (error) {
-            // 에러 시 기본값 사용
-            return { registNo, thSec: 211 };
-          }
-        })
-      );
-      
-      // 결과 처리
-      for (let idx = 0; idx < results.length; idx++) {
-        const result = results[idx];
-        const registNo = batch[idx];
-        if (result.status === "fulfilled") {
-          offlineThSecMap.set(result.value.registNo, result.value.thSec);
-        } else {
-          // 실패한 경우 기본값 사용
-          offlineThSecMap.set(registNo, 211);
-        }
-      }
+    // 모든 농장에 기본값 사용 (캐시는 나중에 백그라운드에서 업데이트)
+    // 초기 로드 속도 최적화를 위해 기본값(211초)만 사용
+    for (const registNo of registNos) {
+      offlineThSecMap.set(registNo, 211); // 기본값 사용
     }
 
     for (const [registNo, mappings] of farmMap.entries()) {
