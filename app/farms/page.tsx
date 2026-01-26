@@ -56,6 +56,16 @@ const AlertsTogglePanel = dynamic(() => import("@/components/farms/AlertsToggleP
   loading: () => <div className="h-[400px] w-full" />,
 });
 
+const FarmHeatmap = dynamic(() => import("@/components/charts/FarmHeatmap"), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full" />,
+});
+
+const StatusBarChart = dynamic(() => import("@/components/charts/StatusBarChart"), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full" />,
+});
+
 async function fetchFarmsSummary(limit?: number): Promise<FarmsSummaryResponseDTO> {
   const url = limit 
     ? `/api/farms/summary?limit=${limit}`
@@ -418,6 +428,18 @@ export default function FarmsPage() {
             onStatusSelect={(id) => handleStatusSelect(id as StatusKey)}
           />
         )}
+        
+        {/* 히트맵 및 막대 그래프 */}
+        {data && data.items.length > 0 && (
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FarmHeatmap
+              farms={data.items}
+              onFarmClick={(registNo) => router.push(`/farms/${registNo}`)}
+            />
+            <StatusBarChart farms={data.items} maxItems={20} sortBy="danger" />
+          </div>
+        )}
+        
         <div className="mt-6 space-y-4">
           {showDeferred && (
             <OfflineBanner
