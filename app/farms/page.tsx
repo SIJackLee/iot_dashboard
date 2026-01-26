@@ -16,12 +16,37 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { FarmsSummaryResponseDTO } from "@/types/dto";
-import FarmOverviewHeader from "@/components/farms/FarmOverviewHeader";
-import AlertsTogglePanel from "@/components/farms/AlertsTogglePanel";
 
 const OfflineBanner = dynamic(() => import("@/components/farms/OfflineBanner"), {
   ssr: false,
   loading: () => <div className="h-16 w-full" />,
+});
+
+const FarmOverviewHeader = dynamic(() => import("@/components/farms/FarmOverviewHeader"), {
+  ssr: false,
+  loading: () => (
+    <div className="space-y-4 mb-6">
+      <div className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-white/95 backdrop-blur border-b">
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <Skeleton className="h-8 w-32" />
+      <div className="bg-white rounded-lg shadow-sm border p-4">
+        <Skeleton className="h-4 w-24 mb-2" />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
+      <div className="h-[260px] w-full" />
+    </div>
+  ),
+});
+
+const AlertsTogglePanel = dynamic(() => import("@/components/farms/AlertsTogglePanel"), {
+  ssr: false,
+  loading: () => <div className="h-[400px] w-full" />,
 });
 
 async function fetchFarmsSummary(): Promise<FarmsSummaryResponseDTO> {
@@ -62,6 +87,8 @@ export default function FarmsPage() {
     refetchOnWindowFocus: false,
     retry: 1,
     retryDelay: 2000,
+    staleTime: 10000, // 10초간 fresh 상태 유지 (캐시 활용)
+    gcTime: 300000, // 5분간 캐시 유지 (React Query v5)
   });
 
   useEffect(() => {
