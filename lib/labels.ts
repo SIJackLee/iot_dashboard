@@ -17,7 +17,7 @@ const SENSOR_LABELS: Record<string, string> = {
   es01: "온도",
   es02: "습도",
   es03: "이산화탄소",
-  es04: "조도",
+  es04: "암모니아",
   es09: "음압",
 };
 
