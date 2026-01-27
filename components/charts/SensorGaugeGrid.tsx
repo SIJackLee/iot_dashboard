@@ -27,7 +27,7 @@ export default function SensorGaugeGrid({ sensors }: SensorGaugeGridProps) {
   };
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
       {sensorKeys.map((key) => {
         const values = sensors[key] as number[];
         const maxValue = getMaxValue(values);
