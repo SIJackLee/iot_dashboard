@@ -16,7 +16,6 @@ import dynamic from "next/dynamic";
 import EmptyState from "@/components/common/EmptyState";
 import RoomDetailSkeleton from "@/components/skeletons/RoomDetailSkeleton";
 import SensorGaugeGrid from "@/components/charts/SensorGaugeGrid";
-import StatusTimeline from "@/components/charts/StatusTimeline";
 import type { RoomSnapshotFullDTO, RoomLogsResponseDTO } from "@/types/dto";
 import { roomLabel, stallLabel, FARM_LABEL } from "@/lib/labels";
 
@@ -230,18 +229,6 @@ export default function RoomDetailPage() {
           <SensorsPanel sensors={roomData.sensors} />
           <MotorsPanel motors={roomData.motors} />
         </div>
-
-        {/* 상태 타임라인 */}
-        {logItems.length > 0 && (
-          <Card className="mb-4 sm:mb-6">
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg">상태 타임라인</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StatusTimeline logs={logItems} />
-            </CardContent>
-          </Card>
-        )}
 
         <Card>
           <CardHeader>
