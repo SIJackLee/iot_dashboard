@@ -10,12 +10,15 @@ interface SensorGaugeGridProps {
 }
 
 // 센서별 임계값 (stateRules.ts와 동일)
-const SENSOR_THRESHOLDS: Record<string, { warn: number; danger: number }> = {
-  es01: { warn: 280, danger: 320 }, // 온도 28.0C / 32.0C
-  es02: { warn: 650, danger: 750 }, // 습도 65% / 75%
-  es03: { warn: 2300, danger: 2600 }, // CO2 ppm
-  es04: { warn: 230, danger: 280 }, // NH3 23ppm / 28ppm (x10)
-  es09: { warn: 380, danger: 450 }, // 음압 38Pa / 45Pa (x10)
+const SENSOR_THRESHOLDS: Record<
+  string,
+  { warn: number; danger: number; warnLow: number; dangerLow: number }
+> = {
+  es01: { warn: 280, danger: 320, warnLow: 200, dangerLow: 150 }, // 온도 28.0C / 32.0C / 20.0C / 15.0C
+  es02: { warn: 650, danger: 750, warnLow: 450, dangerLow: 350 }, // 습도 65% / 75% / 45% / 35%
+  es03: { warn: 2300, danger: 2600, warnLow: 800, dangerLow: 600 }, // CO2 ppm
+  es04: { warn: 230, danger: 280, warnLow: 120, dangerLow: 80 }, // NH3 23ppm / 28ppm / 12ppm / 8ppm (x10)
+  es09: { warn: 380, danger: 450, warnLow: 200, dangerLow: 120 }, // 음압 38Pa / 45Pa / 20Pa / 12Pa (x10)
 };
 
 export default function SensorGaugeGrid({ sensors }: SensorGaugeGridProps) {
