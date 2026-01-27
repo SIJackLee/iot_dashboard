@@ -109,12 +109,12 @@ export async function GET(
         es09: row.es09 || [],
       };
 
-      // motors는 vent_mode가 없으므로 ec01만 포함 (ec02/ec03은 null)
+      // motors는 vent_mode가 없으므로 기본값만 사용
       const motors: MotorsDTO = {
         ec01: row.ec01 || [],
         ventMode: "exhaust", // log에는 vent_mode 정보가 없으므로 기본값
-        ec02: null,
-        ec03: null,
+        ec02: row.ec02 ?? null,
+        ec03: row.ec03 ?? null,
         activeVent: [],
       };
 
