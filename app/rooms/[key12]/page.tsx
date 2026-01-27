@@ -12,17 +12,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TopBar from "@/components/shell/TopBar";
 import SensorsPanel from "@/components/rooms/SensorsPanel";
 import MotorsPanel from "@/components/rooms/MotorsPanel";
-import dynamic from "next/dynamic";
 import EmptyState from "@/components/common/EmptyState";
 import RoomDetailSkeleton from "@/components/skeletons/RoomDetailSkeleton";
 import SensorGaugeGrid from "@/components/charts/SensorGaugeGrid";
+import SensorTrendChart from "@/components/charts/SensorTrendChart";
+import MotorTrendChart from "@/components/charts/MotorTrendChart";
 import type { RoomSnapshotFullDTO, RoomLogsResponseDTO } from "@/types/dto";
 import { roomLabel, stallLabel, FARM_LABEL } from "@/lib/labels";
-
-const RoomTrendChart = dynamic(() => import("@/components/charts/RoomTrendChart"), {
-  ssr: false,
-  loading: () => <div className="h-[300px] min-h-[300px] w-full" />,
-});
 
 async function fetchRoomFull(key12: string): Promise<RoomSnapshotFullDTO> {
   const res = await fetch(`/api/rooms/${key12}`);
@@ -96,6 +92,14 @@ export default function RoomDetailPage() {
       setLastLogsLoadedAt(new Date().toLocaleString("ko-KR"));
     }
   }, [logsData, timeRange]);
+
+  const sensorTrendKeys: Array<"es01" | "es02" | "es03" | "es04" | "es09"> = [
+    "es01",
+    "es02",
+    "es03",
+    "es04",
+    "es09",
+  ];
 
   const handleLoadMore = async () => {
     if (timeRange === "none" || !nextCursor || isLoadingMore) return;
@@ -272,7 +276,21 @@ export default function RoomDetailPage() {
                     차트 확대
                   </Button>
                 </div>
-                <RoomTrendChart logs={logItems} />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {sensorTrendKeys.map((key) => (
+                      <SensorTrendChart
+                        key={key}
+                        logs={logItems}
+                        sensorKey={key}
+                      />
+                    ))}
+                  </div>
+                  <MotorTrendChart
+                    logs={logItems}
+                    ventMode={roomData.mapping.ventMode === "intake" ? "intake" : "exhaust"}
+                  />
+                </div>
               </div>
             )}
             {timeRange === "none" && (
@@ -317,7 +335,23 @@ export default function RoomDetailPage() {
               </Button>
             </div>
             <div className="p-4">
-              <RoomTrendChart logs={logItems} height={480} showTitle={false} />
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {sensorTrendKeys.map((key) => (
+                    <SensorTrendChart
+                      key={key}
+                      logs={logItems}
+                      sensorKey={key}
+                      height={260}
+                    />
+                  ))}
+                </div>
+                <MotorTrendChart
+                  logs={logItems}
+                  ventMode={roomData.mapping.ventMode === "intake" ? "intake" : "exhaust"}
+                  height={360}
+                />
+              </div>
             </div>
           </div>
         </div>
