@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { RoomLogPointDTO } from "@/types/dto";
-import { convertMotorValue, getMotorUnit, motorLabel } from "@/lib/labels";
+import { convertMotorValue, getMotorUnit, motorLabel, ventModeLabel } from "@/lib/labels";
 
 type VentMode = "exhaust" | "intake";
 
@@ -77,7 +77,12 @@ export default function MotorTrendChart({
   return (
     <div className="rounded-lg border bg-white p-3 shadow-sm">
       {showTitle && (
-        <div className="text-sm font-semibold mb-3">모터 트렌드</div>
+        <div className="flex items-center justify-between text-sm font-semibold mb-3">
+          <span>모터 트렌드</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            {ventModeLabel(ventMode)}
+          </span>
+        </div>
       )}
       <div className="flex flex-wrap gap-2 text-xs mb-3">
         <button
