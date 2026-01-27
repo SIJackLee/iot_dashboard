@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { RoomLogPointDTO } from "@/types/dto";
-import { motorLabel, sensorLabel } from "@/lib/labels";
+import { convertMotorValue, convertSensorValue, getMotorUnit, getSensorUnit, motorLabel, sensorLabel } from "@/lib/labels";
 
 interface RoomTrendChartProps {
   logs: RoomLogPointDTO[];
@@ -31,10 +31,10 @@ export default function RoomTrendChart({
         hour: "2-digit",
         minute: "2-digit",
       }),
-      ES01: maxEs01,
-      ES02: maxEs02,
-      ES03: maxEs03,
-      EC01: maxEc01,
+      ES01: convertSensorValue("es01", maxEs01),
+      ES02: convertSensorValue("es02", maxEs02),
+      ES03: convertSensorValue("es03", maxEs03),
+      EC01: convertMotorValue("ec01", maxEc01),
     };
   }).reverse(); // 시간순 정렬
 
@@ -87,7 +87,13 @@ export default function RoomTrendChart({
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="time" />
             <YAxis />
-            <Tooltip />
+            <Tooltip
+              formatter={(value, name) => {
+                const unit =
+                  name === "EC01" ? getMotorUnit("ec01") : getSensorUnit(String(name).toLowerCase());
+                return [`${Number(value).toLocaleString()} ${unit}`, name];
+              }}
+            />
             {!hiddenKeys.has("ES01") && (
               <Line type="monotone" dataKey="ES01" stroke="#8884d8" />
             )}
