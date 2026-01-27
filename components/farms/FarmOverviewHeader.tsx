@@ -90,13 +90,6 @@ export default function FarmOverviewHeader({
         </div>
       </Card>
 
-      {/* 모바일: 히트맵 (축소형) */}
-      {farms && (
-        <div className="sm:hidden">
-          <FarmHeatmap farms={farms} onFarmClick={onFarmClick} compact />
-        </div>
-      )}
-      
       {/* PC: 전체 요약 */}
       <Card className="bg-white rounded-lg shadow-sm border p-4 hidden sm:block">
         <div className="text-sm text-muted-foreground mb-2">전체 요약</div>
