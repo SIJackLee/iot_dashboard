@@ -2,12 +2,15 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { RoomLogPointDTO } from "@/types/dto";
 import { convertSensorValue, getSensorUnit, sensorLabel } from "@/lib/labels";
 
 type SensorKey = "es01" | "es02" | "es03" | "es04" | "es09";
+
+const LINE_KEYS = ["v1", "v2", "v3", "v4"] as const;
+const LINE_OPACITIES = [1, 0.8, 0.6, 0.4];
 
 interface SensorTrendChartProps {
   logs: RoomLogPointDTO[];
@@ -32,30 +35,66 @@ export default function SensorTrendChart({
 }: SensorTrendChartProps) {
   const unit = getSensorUnit(sensorKey);
   const color = SENSOR_COLORS[sensorKey];
-
-  const chartData = useMemo(
-    () =>
-      logs
-        .map((log) => {
-          const values = log.sensors[sensorKey] ?? [];
-          const maxValue = values.length > 0 ? Math.max(...values) : 0;
-          return {
-            time: new Date(log.measureTsKst).toLocaleTimeString("ko-KR", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            value: convertSensorValue(sensorKey, maxValue),
-          };
-        })
-        .reverse(),
-    [logs, sensorKey]
+  const isMobile = typeof window !== "undefined"
+    && window.matchMedia("(max-width: 639px)").matches;
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(
+    () => (isMobile ? new Set(["v3", "v4"]) : new Set())
   );
+
+  const chartData = logs
+    .map((log) => {
+      const values = log.sensors[sensorKey] ?? [];
+      const valueSlots = LINE_KEYS.map((_, index) => {
+        const raw = values[index];
+        return raw == null ? null : convertSensorValue(sensorKey, raw);
+      });
+      return {
+        time: new Date(log.measureTsKst).toLocaleTimeString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        v1: valueSlots[0],
+        v2: valueSlots[1],
+        v3: valueSlots[2],
+        v4: valueSlots[3],
+      };
+    })
+    .reverse();
 
   return (
     <div className="rounded-lg border bg-white p-3 shadow-sm">
       {showTitle && (
         <div className="text-sm font-semibold mb-3">{sensorLabel(sensorKey)}</div>
       )}
+      <div className="flex flex-wrap gap-2 text-xs mb-3">
+        {LINE_KEYS.map((key, index) => {
+          const hidden = hiddenKeys.has(key);
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() =>
+                setHiddenKeys((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(key)) next.delete(key);
+                  else next.add(key);
+                  return next;
+                })
+              }
+              className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
+                hidden ? "opacity-40" : ""
+              }`}
+              title={`${sensorLabel(sensorKey)} ${index + 1} ${hidden ? "표시" : "숨김"}`}
+            >
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: color }}
+              />
+              {index + 1}
+            </button>
+          );
+        })}
+      </div>
       <div className="w-full" style={{ height, minHeight: height }}>
         <ResponsiveContainer
           width="100%"
@@ -69,9 +108,25 @@ export default function SensorTrendChart({
             <XAxis dataKey="time" />
             <YAxis />
             <Tooltip
-              formatter={(value) => [`${Number(value).toLocaleString()} ${unit}`, sensorLabel(sensorKey)]}
+              formatter={(value, name) => [
+                `${Number(value).toLocaleString()} ${unit}`,
+                `${sensorLabel(sensorKey)} ${name}`,
+              ]}
             />
-            <Line type="monotone" dataKey="value" stroke={color} />
+            {LINE_KEYS.map((key, index) =>
+              hiddenKeys.has(key) ? null : (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  name={`${index + 1}`}
+                  stroke={color}
+                  strokeOpacity={LINE_OPACITIES[index]}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              )
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
