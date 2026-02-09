@@ -99,26 +99,18 @@ export async function GET(
       es09: snapshot.es09 || [],
     };
 
-    // motors DTO
+    // motors DTO (입기/배기 정책 해제: ec02, ec03 둘 다 반환)
     const ventMode = mapping.vent_mode as "exhaust" | "intake";
     const ec01 = snapshot.ec01 || [];
-    const ec02 = snapshot.ec02;
-    const ec03 = snapshot.ec03;
-
-    // activeVent 결정
-    let activeVent: number[] = [];
-    if (ventMode === "exhaust") {
-      activeVent = ec02 || [];
-    } else if (ventMode === "intake") {
-      activeVent = ec03 || [];
-    }
+    const ec02 = snapshot.ec02 ?? null;
+    const ec03 = snapshot.ec03 ?? null;
 
     const motors: MotorsDTO = {
       ec01,
       ventMode,
-      ec02: ventMode === "exhaust" ? ec02 : null,
-      ec03: ventMode === "intake" ? ec03 : null,
-      activeVent,
+      ec02,
+      ec03,
+      activeVent: ec02 || ec03 || [],
     };
 
     return NextResponse.json({
