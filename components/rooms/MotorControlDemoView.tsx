@@ -12,6 +12,15 @@ type MotorKey = "ec01" | "ec02" | "ec03";
 const MOTOR_KEYS: MotorKey[] = ["ec01", "ec02", "ec03"];
 const SNAP_VALUES = [0, 25, 50, 75, 100] as const;
 
+/** 방안 A: 프리셋별 고정 duration (초/1회전) - 5단계 명확 구분 */
+const FAN_DURATIONS: Record<number, number> = {
+  0: 0,
+  25: 4,
+  50: 2,
+  75: 1,
+  100: 0.4,
+};
+
 function snapToNearest(value: number): number {
   let nearest: number = SNAP_VALUES[0];
   let minDist = Math.abs(value - nearest);
@@ -150,10 +159,10 @@ function FloorLayer({
 }) {
   const clamped = Math.min(100, Math.max(0, pct));
 
-  // 팬 회전: 슬라이더(목표)와 현재RPM 중 시각에 반영할 값
+  // 팬 회전: visualPct를 프리셋으로 스냅 후 FAN_DURATIONS 적용 (방안 A)
   const visualPct = currentRpm != null && currentRpm > 0 ? Math.min(100, (currentRpm / 1500) * 100) : clamped;
-  const fanDuration =
-    visualPct <= 0 ? 0 : Math.max(0.3, 3 - (visualPct / 100) * 2.5);
+  const snappedPct = snapToNearest(visualPct);
+  const fanDuration = FAN_DURATIONS[snappedPct] ?? (snappedPct <= 0 ? 0 : 2);
 
   // 돼지 밀림/기울기 - 목표(슬라이더) 기준
   const pigTilt = (clamped / 100) * 35;

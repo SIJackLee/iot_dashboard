@@ -189,6 +189,13 @@ export default function MotorControlPanel({
     await sendActions([{ eq: eqOf(k), op: "SET_RPM_PCT", pct: clamped }]);
   };
 
+  const handleSliderCommitAndSend = async (k: MotorKey, pct: number) => {
+    const clamped = Math.min(100, Math.max(0, pct));
+    setSliderValues((prev) => ({ ...prev, [k]: clamped }));
+    setValues((prev) => ({ ...prev, [k]: String(clamped) }));
+    await sendActions([{ eq: eqOf(k), op: "SET_RPM_PCT", pct: clamped }]);
+  };
+
   // 체험 모드: 게임형 UI (3층, 돼지, 팬 애니메이션)
   if (isDemoMode) {
     return (
@@ -201,10 +208,7 @@ export default function MotorControlPanel({
             setSliderValues((prev) => ({ ...prev, [k]: v }));
             setValues((prev) => ({ ...prev, [k]: String(v) }));
           }}
-          onSliderCommit={(k, v) => {
-            setSliderValues((prev) => ({ ...prev, [k]: v }));
-            setValues((prev) => ({ ...prev, [k]: String(v) }));
-          }}
+          onSliderCommit={handleSliderCommitAndSend}
           onPresetAndSend={handlePresetAndSend}
           onSend={handleSend}
           onSendSingle={handleSendSingle}
