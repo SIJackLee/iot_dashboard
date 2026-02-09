@@ -5,7 +5,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AlertTriangle, FileX, X } from "lucide-react";
+import { AlertTriangle, FileX, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,6 +57,7 @@ export default function RoomDetailPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [lastLogsLoadedAt, setLastLogsLoadedAt] = useState<string | null>(null);
   const [chartOpen, setChartOpen] = useState(false);
+  const [motorControlOpen, setMotorControlOpen] = useState(false);
 
   const { data: roomData, isLoading: roomLoading } = useQuery({
     queryKey: ["room-full", key12],
@@ -157,17 +158,27 @@ export default function RoomDetailPage() {
     <div className="min-h-screen bg-gray-50">
       <TopBar />
       <main className="container mx-auto px-4 py-4 sm:py-6">
-        <div className="mb-3 sm:mb-4">
+        <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => router.back()}
+              variant="outline"
+              className="min-h-[44px]"
+            >
+              ← 뒤로
+            </Button>
+            <h1 className="text-xl sm:text-2xl font-bold">
+              {roomLabel(roomData.mapping.roomNo)} 상세
+            </h1>
+          </div>
           <Button
-            onClick={() => router.back()}
-            variant="outline"
-            className="mb-3 sm:mb-4 min-h-[44px]"
+            onClick={() => setMotorControlOpen(true)}
+            variant="default"
+            className="min-h-[44px] gap-2 shrink-0"
           >
-            ← 뒤로
+            <SlidersHorizontal className="h-4 w-4" />
+            모터 제어
           </Button>
-          <h1 className="text-xl sm:text-2xl font-bold">
-            {roomLabel(roomData.mapping.roomNo)} 상세
-          </h1>
         </div>
 
         <Card className="mb-4 sm:mb-6">
@@ -233,15 +244,6 @@ export default function RoomDetailPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
           <SensorsPanel sensors={roomData.sensors} />
           <MotorsPanel motors={roomData.motors} />
-        </div>
-
-        <div className="mb-4 sm:mb-6">
-          <MotorControlPanel
-            key12={roomData.mapping.key12}
-            ventMode={roomData.mapping.ventMode}
-            blowerCount={roomData.mapping.blowerCount}
-            ventCount={roomData.mapping.ventCount}
-          />
         </div>
 
         <Card>
@@ -362,6 +364,38 @@ export default function RoomDetailPage() {
                   height={360}
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {motorControlOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          onClick={() => setMotorControlOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="bg-white rounded-lg w-full max-w-lg shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-label="모터 제어"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+              <div className="font-semibold flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4" />
+                모터 제어
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setMotorControlOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="p-4">
+              <MotorControlPanel
+                key12={roomData.mapping.key12}
+                ventMode={roomData.mapping.ventMode}
+                blowerCount={roomData.mapping.blowerCount}
+                ventCount={roomData.mapping.ventCount}
+              />
             </div>
           </div>
         </div>
