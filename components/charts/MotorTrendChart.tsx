@@ -46,6 +46,8 @@ export default function MotorTrendChart({
     secondaryKey === "ec02" ? ec02MaxLen : ec03MaxLen,
     MAX_SECONDARY
   );
+  // 테이블에 모터 데이터가 없으면 렌더링하지 않음
+  if (blowerSlotCount === 0 && secondarySlotCount === 0) return null;
 
   const blowerKeys = Array.from({ length: blowerSlotCount }, (_, i) => `b${i + 1}`);
   const secondaryKeys = Array.from({ length: secondarySlotCount }, (_, i) => `s${i + 1}`);

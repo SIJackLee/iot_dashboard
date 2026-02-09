@@ -106,6 +106,34 @@ export async function supabaseSelect<T = unknown>(
 }
 
 /**
+ * Supabase 테이블 INSERT
+ */
+export async function supabaseInsert<T = unknown>(
+  table: string,
+  body: Record<string, unknown>
+): Promise<T[]> {
+  const url = `${BASE_URL}/${table}`;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+  const response = await fetch(url, {
+    method: "POST",
+    headers: DEFAULT_HEADERS,
+    body: JSON.stringify(body),
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeoutId));
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Supabase insert failed: ${response.status} ${response.statusText} - ${errorText}`
+    );
+  }
+
+  return response.json();
+}
+
+/**
  * Supabase RPC 호출
  */
 export async function supabaseRpc<T = unknown>(

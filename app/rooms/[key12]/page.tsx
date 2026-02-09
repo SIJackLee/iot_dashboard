@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TopBar from "@/components/shell/TopBar";
 import SensorsPanel from "@/components/rooms/SensorsPanel";
 import MotorsPanel from "@/components/rooms/MotorsPanel";
+import MotorControlPanel from "@/components/rooms/MotorControlPanel";
 import EmptyState from "@/components/common/EmptyState";
 import RoomDetailSkeleton from "@/components/skeletons/RoomDetailSkeleton";
 import SensorGaugeGrid from "@/components/charts/SensorGaugeGrid";
@@ -232,6 +233,15 @@ export default function RoomDetailPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
           <SensorsPanel sensors={roomData.sensors} />
           <MotorsPanel motors={roomData.motors} />
+        </div>
+
+        <div className="mb-4 sm:mb-6">
+          <MotorControlPanel
+            key12={roomData.mapping.key12}
+            ventMode={roomData.mapping.ventMode}
+            blowerCount={roomData.mapping.blowerCount}
+            ventCount={roomData.mapping.ventCount}
+          />
         </div>
 
         <Card>

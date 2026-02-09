@@ -42,6 +42,8 @@ export default function SensorTrendChart({
     Math.max(0, ...logs.map((log) => (log.sensors[sensorKey] ?? []).length)),
     MAX_SLOTS
   );
+  // 테이블에 해당 센서 데이터가 없으면 렌더링하지 않음
+  if (slotCount === 0) return null;
   const lineKeys = Array.from({ length: slotCount }, (_, i) => `v${i + 1}`);
   const lineOpacities = [1, 0.9, 0.8, 0.7, 0.6, 0.5];
 
