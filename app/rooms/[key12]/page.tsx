@@ -3,6 +3,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AlertTriangle, FileX, SlidersHorizontal, X } from "lucide-react";
@@ -12,7 +13,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TopBar from "@/components/shell/TopBar";
 import SensorsPanel from "@/components/rooms/SensorsPanel";
 import MotorsPanel from "@/components/rooms/MotorsPanel";
-import MotorControlPanel from "@/components/rooms/MotorControlPanel";
 import EmptyState from "@/components/common/EmptyState";
 import RoomDetailSkeleton from "@/components/skeletons/RoomDetailSkeleton";
 import SensorGaugeGrid from "@/components/charts/SensorGaugeGrid";
@@ -57,7 +57,6 @@ export default function RoomDetailPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [lastLogsLoadedAt, setLastLogsLoadedAt] = useState<string | null>(null);
   const [chartOpen, setChartOpen] = useState(false);
-  const [motorControlOpen, setMotorControlOpen] = useState(false);
 
   const { data: roomData, isLoading: roomLoading } = useQuery({
     queryKey: ["room-full", key12],
@@ -171,13 +170,11 @@ export default function RoomDetailPage() {
               {roomLabel(roomData.mapping.roomNo)} 상세
             </h1>
           </div>
-          <Button
-            onClick={() => setMotorControlOpen(true)}
-            variant="default"
-            className="min-h-[44px] gap-2 shrink-0"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            모터 제어
+          <Button asChild variant="default" className="min-h-[44px] shrink-0">
+            <Link href={`/rooms/${key12}/motor`} className="inline-flex items-center gap-2 min-h-[44px]">
+              <SlidersHorizontal className="h-4 w-4" />
+              모터 제어
+            </Link>
           </Button>
         </div>
 
@@ -364,38 +361,6 @@ export default function RoomDetailPage() {
                   height={360}
                 />
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-      {motorControlOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-          onClick={() => setMotorControlOpen(false)}
-          role="presentation"
-        >
-          <div
-            className="bg-white rounded-lg w-full max-w-lg shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-label="모터 제어"
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <div className="font-semibold flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4" />
-                모터 제어
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => setMotorControlOpen(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="p-4">
-              <MotorControlPanel
-                key12={roomData.mapping.key12}
-                ventMode={roomData.mapping.ventMode}
-                blowerCount={roomData.mapping.blowerCount}
-                ventCount={roomData.mapping.ventCount}
-              />
             </div>
           </div>
         </div>
