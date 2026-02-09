@@ -295,10 +295,7 @@ export default function RoomDetailPage() {
                       />
                     ))}
                   </div>
-                  <MotorTrendChart
-                    logs={logItems}
-                    ventMode={roomData.mapping.ventMode === "intake" ? "intake" : "exhaust"}
-                  />
+                  <MotorTrendChart logs={logItems} />
                 </div>
               </div>
             )}
@@ -355,11 +352,7 @@ export default function RoomDetailPage() {
                     />
                   ))}
                 </div>
-                <MotorTrendChart
-                  logs={logItems}
-                  ventMode={roomData.mapping.ventMode === "intake" ? "intake" : "exhaust"}
-                  height={360}
-                />
+                <MotorTrendChart logs={logItems} height={360} />
               </div>
             </div>
           </div>

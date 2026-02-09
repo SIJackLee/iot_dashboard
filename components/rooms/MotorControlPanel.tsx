@@ -210,10 +210,7 @@ export default function MotorControlPanel({
           }}
           onSliderCommit={handleSliderCommitAndSend}
           onPresetAndSend={handlePresetAndSend}
-          onSend={handleSend}
-          onSendSingle={handleSendSingle}
           loading={loading}
-          statusDisplay={statusDisplay}
           errorMessage={errorMessage}
           appliedMotor={appliedMotor}
         />

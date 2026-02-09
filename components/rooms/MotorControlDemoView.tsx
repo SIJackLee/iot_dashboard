@@ -5,7 +5,6 @@
 
 import { Button } from "@/components/ui/button";
 import { motorLabel, getMotorUnit } from "@/lib/labels";
-import { Check, Loader2 } from "lucide-react";
 import type { MotorsDTO } from "@/types/dto";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
@@ -48,10 +47,7 @@ interface MotorControlDemoViewProps {
   onSliderChange: (key: MotorKey, value: number) => void;
   onSliderCommit: (key: MotorKey, value: number) => void;
   onPresetAndSend: (key: MotorKey, pct: number) => void;
-  onSend: () => void;
-  onSendSingle: (key: MotorKey) => void;
   loading: boolean;
-  statusDisplay: "[명령 전달]" | "[명령 적용]" | "[명령 실패]" | null;
   errorMessage: string | null;
   appliedMotor: MotorKey | null;
 }
@@ -62,10 +58,7 @@ export default function MotorControlDemoView({
   onSliderChange,
   onSliderCommit,
   onPresetAndSend,
-  onSend,
-  onSendSingle,
   loading,
-  statusDisplay,
   errorMessage,
   appliedMotor,
 }: MotorControlDemoViewProps) {
@@ -83,52 +76,14 @@ export default function MotorControlDemoView({
             onSliderChange={(v) => onSliderChange(k, v)}
             onSliderCommit={(v) => onSliderCommit(k, v)}
             onPreset={(pct) => onPresetAndSend(k, pct)}
-            onSend={() => onSendSingle(k)}
             loading={loading}
             applied={appliedMotor === k}
           />
         ))}
       </div>
-
-      {/* 명령 전송 버튼 */}
-      <div className="flex items-center gap-2 flex-wrap pt-2">
-        <Button
-          size="lg"
-          onClick={onSend}
-          disabled={loading}
-          className={`min-w-[140px] gap-2 ${
-            statusDisplay === "[명령 적용]"
-              ? "bg-green-600 hover:bg-green-700"
-              : statusDisplay === "[명령 실패]"
-              ? "bg-red-600 hover:bg-red-700"
-              : ""
-          }`}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              전송 중...
-            </>
-          ) : statusDisplay === "[명령 적용]" ? (
-            <>
-              <Check className="h-4 w-4" />
-              적용됨
-            </>
-          ) : statusDisplay === "[명령 실패]" ? (
-            "실패"
-          ) : statusDisplay === "[명령 전달]" ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-pulse" />
-              전달됨
-            </>
-          ) : (
-            "명령 전송"
-          )}
-        </Button>
-        {errorMessage && (
-          <span className="text-sm text-red-600">{errorMessage}</span>
-        )}
-      </div>
+      {errorMessage && (
+        <p className="text-sm text-red-600 pt-2">{errorMessage}</p>
+      )}
     </div>
   );
 }
@@ -142,7 +97,6 @@ function FloorLayer({
   onSliderChange,
   onSliderCommit,
   onPreset,
-  onSend,
   loading,
   applied,
 }: {
@@ -153,7 +107,6 @@ function FloorLayer({
   onSliderChange: (v: number) => void;
   onSliderCommit: (v: number) => void;
   onPreset: (pct: number) => void;
-  onSend: () => void;
   loading: boolean;
   applied: boolean;
 }) {
@@ -249,16 +202,8 @@ function FloorLayer({
             onTouchEnd={() => onSliderCommit(snapToNearest(clamped))}
             className="w-full h-11 min-h-[44px] rounded-full appearance-none bg-gray-200 accent-blue-600 cursor-grab active:cursor-grabbing"
           />
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-base font-semibold text-gray-600">{Math.round(clamped)}%</span>
-            <Button
-              size="sm"
-              onClick={onSend}
-              disabled={loading}
-              className="min-h-[36px] min-w-[72px] shrink-0"
-            >
-              전송
-            </Button>
+          <div className="text-base font-semibold text-gray-600 text-center">
+            {Math.round(clamped)}%
           </div>
         </div>
       </div>
@@ -309,16 +254,8 @@ function FloorLayer({
             onTouchEnd={() => onSliderCommit(snapToNearest(clamped))}
             className="w-full h-3 rounded-full appearance-none bg-gray-200 accent-blue-600 cursor-grab active:cursor-grabbing"
           />
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-gray-600">{Math.round(clamped)}%</span>
-            <Button
-              size="sm"
-              onClick={onSend}
-              disabled={loading}
-              className="min-w-[64px] shrink-0"
-            >
-              전송
-            </Button>
+          <div className="text-sm font-semibold text-gray-600 text-center">
+            {Math.round(clamped)}%
           </div>
         </div>
         <div className="flex-shrink-0 w-24 flex items-center justify-center">
