@@ -9,8 +9,6 @@ import FreshnessBadge from "../common/FreshnessBadge";
 import { cn } from "@/lib/utils";
 import {
   roomLabel,
-  ventModeLabel,
-  VENT_MODE_LABEL,
   BLOWER_LABEL,
   VENT_FAN_LABEL,
 } from "@/lib/labels";
@@ -128,9 +126,6 @@ export default function RoomCard({
           </div>
         ) : (
           <div className="text-sm text-gray-600 space-y-1">
-            <div>
-              {VENT_MODE_LABEL}: {ventModeLabel(room.ventMode)}
-            </div>
             <div>
               {BLOWER_LABEL}: {room.blowerCount}, {VENT_FAN_LABEL}: {room.ventCount}
             </div>

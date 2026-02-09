@@ -19,7 +19,15 @@ const SENSOR_THRESHOLDS: Record<string, { warn: number; danger: number }> = {
 };
 
 export default function SensorsPanel({ sensors }: SensorsPanelProps) {
-  const sensorKeys: Array<keyof SensorsDTO> = ["es01", "es02", "es03", "es04", "es09"];
+  const allSensorKeys: Array<keyof SensorsDTO> = ["es01", "es02", "es03", "es04", "es09"];
+
+  // 값이 있는 센서만 표시 (null/빈배열/유효값 없음 제외)
+  const sensorKeys = allSensorKeys.filter((key) => {
+    const values = sensors[key];
+    if (!values || !Array.isArray(values) || values.length === 0) return false;
+    const valid = values.filter((v) => v != null && !isNaN(v));
+    return valid.length > 0;
+  });
 
   const getStats = (arr: number[], key: string) => {
     if (arr.length === 0) return { max: 0, min: 0, avg: 0 };
@@ -63,6 +71,8 @@ export default function SensorsPanel({ sensors }: SensorsPanelProps) {
     return "text-green-600";
   };
 
+  if (sensorKeys.length === 0) return null;
+
   return (
     <div>
       <h3 className="font-semibold mb-2 text-sm sm:text-base">센서 데이터</h3>
@@ -70,7 +80,7 @@ export default function SensorsPanel({ sensors }: SensorsPanelProps) {
       {/* 모바일: 카드 레이아웃 */}
       <div className="sm:hidden space-y-2">
         {sensorKeys.map((key) => {
-          const values = sensors[key] as number[];
+          const values = (sensors[key] ?? []) as number[];
           const stats = getStats(values, key);
           const unit = getSensorUnit(key);
           const maxOriginal = Math.max(...(values.length > 0 ? values : [0]));
