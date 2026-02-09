@@ -27,6 +27,7 @@ export default function RoomMotorPage() {
     queryKey: ["room-full", key12],
     queryFn: () => fetchRoomFull(key12),
     enabled: !!key12,
+    refetchInterval: 5000,
   });
 
   if (isLoading) {
@@ -81,6 +82,7 @@ export default function RoomMotorPage() {
             blowerCount={roomData.mapping.blowerCount}
             ventCount={roomData.mapping.ventCount}
             isDemoMode
+            motors={roomData.motors}
           />
         </div>
       </main>

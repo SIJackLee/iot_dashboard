@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motorLabel } from "@/lib/labels";
 import MotorControlDemoView from "./MotorControlDemoView";
+import type { MotorsDTO } from "@/types/dto";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
 const MOTOR_KEYS: MotorKey[] = ["ec01", "ec02", "ec03"];
@@ -20,6 +21,8 @@ interface MotorControlPanelProps {
   ventCount?: number;
   /** 사내 테스팅용 체험 모드 (게임형 UI) */
   isDemoMode?: boolean;
+  /** 현재 모터 RPM (체험 모드에서 표시) */
+  motors?: MotorsDTO | null;
 }
 
 export default function MotorControlPanel({
@@ -28,6 +31,7 @@ export default function MotorControlPanel({
   blowerCount = 1,
   ventCount = 1,
   isDemoMode = false,
+  motors = null,
 }: MotorControlPanelProps) {
   const [values, setValues] = useState<Record<MotorKey, string>>({
     ec01: "",
@@ -61,25 +65,19 @@ export default function MotorControlPanel({
     };
   }, []);
 
-  const handleSend = async () => {
+  const buildActions = (keys: MotorKey[]) => {
     const actions: { eq: "EC01" | "EC02" | "EC03"; op: "SET_RPM_PCT"; pct: number }[] = [];
-
-    for (const k of MOTOR_KEYS) {
+    for (const k of keys) {
       const v = values[k]?.trim();
       if (!v) continue;
-
       const pct = parseInt(v, 10);
       if (isNaN(pct) || pct < 0 || pct > 100) continue;
       actions.push({ eq: eqOf(k), op: "SET_RPM_PCT", pct });
     }
+    return actions;
+  };
 
-    if (actions.length === 0) {
-      setErrorMessage("입력된 값이 없습니다. (EC01/EC02/EC03 중 최소 1개)");
-      setStatusDisplay(null);
-      return;
-    }
-
-    setLoading(true);
+  const sendActions = async (actions: { eq: "EC01" | "EC02" | "EC03"; op: "SET_RPM_PCT"; pct: number }[]) => {
     setStatusDisplay(null);
     setErrorMessage(null);
     if (pollRef.current) {
@@ -87,6 +85,7 @@ export default function MotorControlPanel({
       pollRef.current = null;
     }
     lastCmdIdRef.current = null;
+    setLoading(true);
 
     try {
       const res = await fetch(`/api/rooms/${key12}/command`, {
@@ -149,6 +148,26 @@ export default function MotorControlPanel({
     }
   };
 
+  const handleSend = async () => {
+    const actions = buildActions(MOTOR_KEYS);
+    if (actions.length === 0) {
+      setErrorMessage("입력된 값이 없습니다. (EC01/EC02/EC03 중 최소 1개)");
+      setStatusDisplay(null);
+      return;
+    }
+    await sendActions(actions);
+  };
+
+  const handleSendSingle = async (k: MotorKey) => {
+    const actions = buildActions([k]);
+    if (actions.length === 0) {
+      setErrorMessage(`${motorLabel(k)} 값을 설정해 주세요. (0~100)`);
+      setStatusDisplay(null);
+      return;
+    }
+    await sendActions(actions);
+  };
+
   // 체험 모드: 게임형 UI (3층, 돼지, 팬 애니메이션)
   if (isDemoMode) {
     return (
@@ -156,6 +175,7 @@ export default function MotorControlPanel({
         <h3 className="font-semibold mb-3 text-sm sm:text-base">모터 제어 (체험 모드)</h3>
         <MotorControlDemoView
           sliderValues={sliderValues}
+          motors={motors}
           onSliderChange={(k, v) => {
             setSliderValues((prev) => ({ ...prev, [k]: v }));
             setValues((prev) => ({ ...prev, [k]: String(v) }));
@@ -166,6 +186,7 @@ export default function MotorControlPanel({
           }}
           onPreset={applyPreset}
           onSend={handleSend}
+          onSendSingle={handleSendSingle}
           loading={loading}
           statusDisplay={statusDisplay}
           errorMessage={errorMessage}

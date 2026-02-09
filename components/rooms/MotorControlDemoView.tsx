@@ -4,8 +4,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { motorLabel } from "@/lib/labels";
+import { motorLabel, getMotorUnit } from "@/lib/labels";
 import { Check, Loader2 } from "lucide-react";
+import type { MotorsDTO } from "@/types/dto";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
 const MOTOR_KEYS: MotorKey[] = ["ec01", "ec02", "ec03"];
@@ -24,12 +25,22 @@ function snapToNearest(value: number): number {
   return nearest;
 }
 
+function getCurrentRpm(motors: MotorsDTO | null | undefined, key: MotorKey): number | null {
+  if (!motors) return null;
+  const arr = key === "ec01" ? motors.ec01 : key === "ec02" ? motors.ec02 : motors.ec03;
+  if (!arr || !Array.isArray(arr) || arr.length === 0) return null;
+  const nums = arr.filter((n) => typeof n === "number" && !isNaN(n));
+  return nums.length > 0 ? Math.max(...nums) : null;
+}
+
 interface MotorControlDemoViewProps {
   sliderValues: Record<MotorKey, number>;
+  motors?: MotorsDTO | null;
   onSliderChange: (key: MotorKey, value: number) => void;
   onSliderCommit: (key: MotorKey, value: number) => void;
   onPreset: (pct: number) => void;
   onSend: () => void;
+  onSendSingle: (key: MotorKey) => void;
   loading: boolean;
   statusDisplay: "[명령 전달]" | "[명령 적용]" | "[명령 실패]" | null;
   errorMessage: string | null;
@@ -37,10 +48,12 @@ interface MotorControlDemoViewProps {
 
 export default function MotorControlDemoView({
   sliderValues,
+  motors = null,
   onSliderChange,
   onSliderCommit,
   onPreset,
   onSend,
+  onSendSingle,
   loading,
   statusDisplay,
   errorMessage,
@@ -70,8 +83,11 @@ export default function MotorControlDemoView({
             motorKey={k}
             label={motorLabel(k)}
             pct={sliderValues[k]}
+            currentRpm={getCurrentRpm(motors, k)}
             onSliderChange={(v) => onSliderChange(k, v)}
             onSliderCommit={(v) => onSliderCommit(k, v)}
+            onSend={() => onSendSingle(k)}
+            loading={loading}
           />
         ))}
       </div>
@@ -119,40 +135,56 @@ export default function MotorControlDemoView({
   );
 }
 
-// 단일 층: 돼지(왼쪽) + 바람영역(가운데) + 팬(오른쪽)
+// 단일 층: 옵션 A(모바일) / 가로배치(PC) + 층별 전송 버튼
 function FloorLayer({
   motorKey,
   label,
   pct,
+  currentRpm,
   onSliderChange,
   onSliderCommit,
+  onSend,
+  loading,
 }: {
   motorKey: MotorKey;
   label: string;
   pct: number;
+  currentRpm: number | null;
   onSliderChange: (v: number) => void;
   onSliderCommit: (v: number) => void;
+  onSend: () => void;
+  loading: boolean;
 }) {
   const clamped = Math.min(100, Math.max(0, pct));
 
-  // 팬 회전 속도: 0%=정지, 50%=느림, 75%=빠름, 100%=매우빠름
+  // 팬 회전: 슬라이더(목표)와 현재RPM 중 시각에 반영할 값
+  const visualPct = currentRpm != null && currentRpm > 0 ? Math.min(100, (currentRpm / 1500) * 100) : clamped;
   const fanDuration =
-    clamped <= 0 ? 0 : Math.max(0.3, 3 - (clamped / 100) * 2.5);
+    visualPct <= 0 ? 0 : Math.max(0.3, 3 - (visualPct / 100) * 2.5);
 
-  // 돼지 밀림/기울기 (0~100%) - 과장된 연출
-  const pigTilt = (clamped / 100) * 35; // 0~35deg
-  const pigTranslate = (clamped / 100) * -55; // 0~-55px (날아갈 듯)
-  const pigShake = clamped >= 50 ? 1 : 0; // 50% 이상에서 흔들림
+  // 돼지 밀림/기울기 - 목표(슬라이더) 기준
+  const pigTilt = (clamped / 100) * 35;
+  const pigTranslate = (clamped / 100) * -55;
+  const pigShake = clamped >= 50 ? 1 : 0;
+
+  const rpmText = currentRpm != null ? `${currentRpm.toLocaleString()} ${getMotorUnit(motorKey)}` : "—";
 
   return (
     <div className="rounded-xl border-2 border-gray-200 bg-gradient-to-b from-gray-50 to-white p-4 shadow-sm">
-      <div className="text-xs font-medium text-gray-500 mb-3">{label}</div>
+      {/* 헤더: 모터명 + 현재 RPM */}
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-xs font-medium text-gray-500">{label}</span>
+        <span className="text-sm font-semibold text-gray-700">
+          현재: {rpmText}
+        </span>
+      </div>
 
-      <div className="flex items-center gap-2 sm:gap-4 min-h-[120px]">
-        {/* 왼쪽: 돼지 */}
-        <div className="flex-shrink-0 w-20 sm:w-24 flex items-center justify-center">
+      {/* 모바일(옵션 A): 세로 스택 */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {/* 돼지 + 팬 행 */}
+        <div className="flex justify-between items-center min-h-[100px] py-2">
           <div
-            className="text-5xl sm:text-6xl select-none transition-transform duration-75 ease-out"
+            className="flex-shrink-0 select-none transition-transform duration-75 ease-out"
             style={{
               transform: `translateX(${pigTranslate}px) rotate(${pigTilt}deg)`,
             }}
@@ -168,15 +200,74 @@ function FloorLayer({
               <img
                 src="/images/pig.png"
                 alt="돼지"
-                className="w-14 h-14 sm:w-16 sm:h-16 object-contain"
+                className="w-14 h-14 object-contain"
+              />
+            </span>
+          </div>
+          <div
+            className="w-16 h-16 flex-shrink-0"
+            style={
+              fanDuration > 0
+                ? { animation: `fan-spin ${fanDuration}s linear infinite` }
+                : {}
+            }
+          >
+            <FanIcon />
+          </div>
+        </div>
+        {/* 슬라이더 행 */}
+        <div className="flex flex-col gap-2">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={clamped}
+            onChange={(e) => onSliderChange(Number(e.target.value))}
+            onMouseUp={() => onSliderCommit(snapToNearest(clamped))}
+            onTouchEnd={() => onSliderCommit(snapToNearest(clamped))}
+            className="w-full h-11 min-h-[44px] rounded-full appearance-none bg-gray-200 accent-blue-600 cursor-grab active:cursor-grabbing"
+          />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-base font-semibold text-gray-600">{Math.round(clamped)}%</span>
+            <Button
+              size="sm"
+              onClick={onSend}
+              disabled={loading}
+              className="min-h-[36px] min-w-[72px] shrink-0"
+            >
+              전송
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* PC: 가로 배치 */}
+      <div className="hidden sm:flex items-center gap-4 min-h-[120px]">
+        <div className="flex-shrink-0 w-24 flex items-center justify-center">
+          <div
+            className="select-none transition-transform duration-75 ease-out"
+            style={{
+              transform: `translateX(${pigTranslate}px) rotate(${pigTilt}deg)`,
+            }}
+          >
+            <span
+              className="inline-block"
+              style={{
+                animation: pigShake
+                  ? "pig-shake 0.12s ease-in-out infinite alternate"
+                  : "none",
+              }}
+            >
+              <img
+                src="/images/pig.png"
+                alt="돼지"
+                className="w-16 h-16 object-contain"
               />
             </span>
           </div>
         </div>
-
-        {/* 가운데: 바람 시각화 + 슬라이더 */}
         <div className="flex-1 flex flex-col gap-3 min-w-0">
-          {/* 바람 라인 (가운데) */}
           <div className="flex items-center justify-center h-12 opacity-60">
             <div
               className="h-1 rounded-full bg-blue-200 transition-all duration-75"
@@ -197,15 +288,21 @@ function FloorLayer({
             onTouchEnd={() => onSliderCommit(snapToNearest(clamped))}
             className="w-full h-3 rounded-full appearance-none bg-gray-200 accent-blue-600 cursor-grab active:cursor-grabbing"
           />
-          <div className="text-center text-sm font-semibold text-gray-600">
-            {Math.round(clamped)}%
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-gray-600">{Math.round(clamped)}%</span>
+            <Button
+              size="sm"
+              onClick={onSend}
+              disabled={loading}
+              className="min-w-[64px] shrink-0"
+            >
+              전송
+            </Button>
           </div>
         </div>
-
-        {/* 오른쪽: 팬 */}
-        <div className="flex-shrink-0 w-20 sm:w-24 flex items-center justify-center">
+        <div className="flex-shrink-0 w-24 flex items-center justify-center">
           <div
-            className="w-16 h-16 sm:w-20 sm:h-20 relative"
+            className="w-20 h-20 relative"
             style={
               fanDuration > 0
                 ? {
