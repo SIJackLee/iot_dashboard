@@ -62,10 +62,10 @@ export default function RoomTrendChart({
       {showTitle && <h3 className="font-semibold mb-4">트렌드 차트</h3>}
       <div className="flex flex-wrap gap-2 text-xs mb-3">
         {[
-          { key: "ES01", label: sensorLabel("es01"), color: "#8884d8" },
-          { key: "ES02", label: sensorLabel("es02"), color: "#82ca9d" },
-          { key: "ES03", label: sensorLabel("es03"), color: "#ffc658" },
-          { key: "EC01", label: motorLabel("ec01"), color: "#ff7300" },
+          { key: "ES01" as const, label: sensorLabel("es01"), color: "#8884d8" },
+          { key: "ES02" as const, label: sensorLabel("es02"), color: "#82ca9d" },
+          { key: "ES03" as const, label: sensorLabel("es03"), color: "#ffc658" },
+          { key: "EC01" as const, label: motorLabel("ec01"), color: "#ff7300" },
         ]
           .filter((item) => visibleSeries.includes(item.key))
           .map((item) => {
