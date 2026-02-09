@@ -46,6 +46,8 @@ export default function MotorControlPanel({
   const [loading, setLoading] = useState(false);
   const [statusDisplay, setStatusDisplay] = useState<"[명령 전달]" | "[명령 적용]" | "[명령 실패]" | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [appliedMotor, setAppliedMotor] = useState<MotorKey | null>(null);
+  const appliedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastCmdIdRef = useRef<string | null>(null);
 
@@ -62,6 +64,7 @@ export default function MotorControlPanel({
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (appliedTimeoutRef.current) clearTimeout(appliedTimeoutRef.current);
     };
   }, []);
 
@@ -77,9 +80,13 @@ export default function MotorControlPanel({
     return actions;
   };
 
+  const motorKeysFromActions = (actions: { eq: string }[]): MotorKey[] =>
+    actions.map((a) => (a.eq === "EC01" ? "ec01" : a.eq === "EC02" ? "ec02" : "ec03"));
+
   const sendActions = async (actions: { eq: "EC01" | "EC02" | "EC03"; op: "SET_RPM_PCT"; pct: number }[]) => {
     setStatusDisplay(null);
     setErrorMessage(null);
+    setAppliedMotor(null);
     if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
@@ -108,6 +115,7 @@ export default function MotorControlPanel({
 
       setStatusDisplay("[명령 전달]");
       const cmdId = data.cmd_id;
+      const sentActions = [...actions];
       if (cmdId) {
         lastCmdIdRef.current = cmdId;
         pollRef.current = setInterval(async () => {
@@ -122,6 +130,12 @@ export default function MotorControlPanel({
                 pollRef.current = null;
               }
               setStatusDisplay("[명령 적용]");
+              const keys = motorKeysFromActions(sentActions);
+              if (keys.length === 1) {
+                setAppliedMotor(keys[0]);
+                if (appliedTimeoutRef.current) clearTimeout(appliedTimeoutRef.current);
+                appliedTimeoutRef.current = setTimeout(() => setAppliedMotor(null), 2000);
+              }
             } else if (sdata.status === "FAILED") {
               if (pollRef.current) {
                 clearInterval(pollRef.current);
@@ -168,6 +182,13 @@ export default function MotorControlPanel({
     await sendActions(actions);
   };
 
+  const handlePresetAndSend = async (k: MotorKey, pct: number) => {
+    const clamped = Math.min(100, Math.max(0, pct));
+    setSliderValues((prev) => ({ ...prev, [k]: clamped }));
+    setValues((prev) => ({ ...prev, [k]: String(clamped) }));
+    await sendActions([{ eq: eqOf(k), op: "SET_RPM_PCT", pct: clamped }]);
+  };
+
   // 체험 모드: 게임형 UI (3층, 돼지, 팬 애니메이션)
   if (isDemoMode) {
     return (
@@ -184,12 +205,13 @@ export default function MotorControlPanel({
             setSliderValues((prev) => ({ ...prev, [k]: v }));
             setValues((prev) => ({ ...prev, [k]: String(v) }));
           }}
-          onPreset={applyPreset}
+          onPresetAndSend={handlePresetAndSend}
           onSend={handleSend}
           onSendSingle={handleSendSingle}
           loading={loading}
           statusDisplay={statusDisplay}
           errorMessage={errorMessage}
+          appliedMotor={appliedMotor}
         />
       </div>
     );

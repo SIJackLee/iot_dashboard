@@ -38,12 +38,13 @@ interface MotorControlDemoViewProps {
   motors?: MotorsDTO | null;
   onSliderChange: (key: MotorKey, value: number) => void;
   onSliderCommit: (key: MotorKey, value: number) => void;
-  onPreset: (pct: number) => void;
+  onPresetAndSend: (key: MotorKey, pct: number) => void;
   onSend: () => void;
   onSendSingle: (key: MotorKey) => void;
   loading: boolean;
   statusDisplay: "[명령 전달]" | "[명령 적용]" | "[명령 실패]" | null;
   errorMessage: string | null;
+  appliedMotor: MotorKey | null;
 }
 
 export default function MotorControlDemoView({
@@ -51,31 +52,17 @@ export default function MotorControlDemoView({
   motors = null,
   onSliderChange,
   onSliderCommit,
-  onPreset,
+  onPresetAndSend,
   onSend,
   onSendSingle,
   loading,
   statusDisplay,
   errorMessage,
+  appliedMotor,
 }: MotorControlDemoViewProps) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2 mb-4">
-        <span className="text-xs text-gray-500 self-center">프리셋:</span>
-        {SNAP_VALUES.map((pct) => (
-          <Button
-            key={pct}
-            variant="outline"
-            size="sm"
-            onClick={() => onPreset(pct)}
-            className="min-w-[52px]"
-          >
-            {pct === 0 ? "정지" : `${pct}%`}
-          </Button>
-        ))}
-      </div>
-
-      {/* 3층 구조 */}
+      {/* 3층 구조 - 각 층 상단에 프리셋 */}
       <div className="space-y-3">
         {MOTOR_KEYS.map((k) => (
           <FloorLayer
@@ -86,8 +73,10 @@ export default function MotorControlDemoView({
             currentRpm={getCurrentRpm(motors, k)}
             onSliderChange={(v) => onSliderChange(k, v)}
             onSliderCommit={(v) => onSliderCommit(k, v)}
+            onPreset={(pct) => onPresetAndSend(k, pct)}
             onSend={() => onSendSingle(k)}
             loading={loading}
+            applied={appliedMotor === k}
           />
         ))}
       </div>
@@ -135,7 +124,7 @@ export default function MotorControlDemoView({
   );
 }
 
-// 단일 층: 옵션 A(모바일) / 가로배치(PC) + 층별 전송 버튼
+// 단일 층: 프리셋(상단) + 옵션 A(모바일) / 가로배치(PC) + 층별 전송 버튼
 function FloorLayer({
   motorKey,
   label,
@@ -143,8 +132,10 @@ function FloorLayer({
   currentRpm,
   onSliderChange,
   onSliderCommit,
+  onPreset,
   onSend,
   loading,
+  applied,
 }: {
   motorKey: MotorKey;
   label: string;
@@ -152,8 +143,10 @@ function FloorLayer({
   currentRpm: number | null;
   onSliderChange: (v: number) => void;
   onSliderCommit: (v: number) => void;
+  onPreset: (pct: number) => void;
   onSend: () => void;
   loading: boolean;
+  applied: boolean;
 }) {
   const clamped = Math.min(100, Math.max(0, pct));
 
@@ -170,7 +163,26 @@ function FloorLayer({
   const rpmText = currentRpm != null ? `${currentRpm.toLocaleString()} ${getMotorUnit(motorKey)}` : "—";
 
   return (
-    <div className="rounded-xl border-2 border-gray-200 bg-gradient-to-b from-gray-50 to-white p-4 shadow-sm">
+    <div
+      className={`rounded-xl border-2 bg-gradient-to-b from-gray-50 to-white p-4 shadow-sm transition-shadow ${
+        applied ? "border-green-400 animate-[motor-applied_1.5s_ease-out]" : "border-gray-200"
+      }`}
+    >
+      {/* 프리셋 버튼 (각 팬 상단) */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {SNAP_VALUES.map((pctVal) => (
+          <Button
+            key={pctVal}
+            variant={clamped === pctVal ? "default" : "outline"}
+            size="sm"
+            onClick={() => onPreset(pctVal)}
+            disabled={loading}
+            className="min-h-[32px] min-w-[44px] text-xs"
+          >
+            {pctVal === 0 ? "정지" : `${pctVal}%`}
+          </Button>
+        ))}
+      </div>
       {/* 헤더: 모터명 + 현재 RPM */}
       <div className="flex justify-between items-center mb-3">
         <span className="text-xs font-medium text-gray-500">{label}</span>
