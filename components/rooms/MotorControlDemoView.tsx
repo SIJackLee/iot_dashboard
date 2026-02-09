@@ -9,7 +9,7 @@ import { Check, Loader2 } from "lucide-react";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
 const MOTOR_KEYS: MotorKey[] = ["ec01", "ec02", "ec03"];
-const SNAP_VALUES = [0, 50, 75, 100] as const;
+const SNAP_VALUES = [0, 25, 50, 75, 100] as const;
 
 function snapToNearest(value: number): number {
   let nearest: number = SNAP_VALUES[0];

@@ -11,7 +11,7 @@ import MotorControlDemoView from "./MotorControlDemoView";
 type MotorKey = "ec01" | "ec02" | "ec03";
 const MOTOR_KEYS: MotorKey[] = ["ec01", "ec02", "ec03"];
 
-const PRESETS_PCT = [0, 50, 75, 100] as const;
+const PRESETS_PCT = [0, 25, 50, 75, 100] as const;
 
 interface MotorControlPanelProps {
   key12: string;
