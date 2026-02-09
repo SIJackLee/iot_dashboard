@@ -36,3 +36,22 @@
     font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   }
 }
+
+/* 모터 제어 체험 모드 애니메이션 */
+@keyframes fan-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pig-shake {
+  from {
+    transform: translateX(-3px);
+  }
+  to {
+    transform: translateX(3px);
+  }
+}

@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motorLabel } from "@/lib/labels";
+import MotorControlDemoView from "./MotorControlDemoView";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
 const MOTOR_KEYS: MotorKey[] = ["ec01", "ec02", "ec03"];
@@ -17,6 +18,8 @@ interface MotorControlPanelProps {
   ventMode?: "exhaust" | "intake";
   blowerCount?: number;
   ventCount?: number;
+  /** 사내 테스팅용 체험 모드 (게임형 UI) */
+  isDemoMode?: boolean;
 }
 
 export default function MotorControlPanel({
@@ -24,6 +27,7 @@ export default function MotorControlPanel({
   ventMode = "exhaust",
   blowerCount = 1,
   ventCount = 1,
+  isDemoMode = false,
 }: MotorControlPanelProps) {
   const [values, setValues] = useState<Record<MotorKey, string>>({
     ec01: "",
@@ -144,6 +148,31 @@ export default function MotorControlPanel({
       setLoading(false);
     }
   };
+
+  // 체험 모드: 게임형 UI (3층, 돼지, 팬 애니메이션)
+  if (isDemoMode) {
+    return (
+      <div className="rounded-lg p-0">
+        <h3 className="font-semibold mb-3 text-sm sm:text-base">모터 제어 (체험 모드)</h3>
+        <MotorControlDemoView
+          sliderValues={sliderValues}
+          onSliderChange={(k, v) => {
+            setSliderValues((prev) => ({ ...prev, [k]: v }));
+            setValues((prev) => ({ ...prev, [k]: String(v) }));
+          }}
+          onSliderCommit={(k, v) => {
+            setSliderValues((prev) => ({ ...prev, [k]: v }));
+            setValues((prev) => ({ ...prev, [k]: String(v) }));
+          }}
+          onPreset={applyPreset}
+          onSend={handleSend}
+          loading={loading}
+          statusDisplay={statusDisplay}
+          errorMessage={errorMessage}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border bg-white p-4 shadow-sm">
