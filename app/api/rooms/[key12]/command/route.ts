@@ -7,9 +7,8 @@ type MotorEq = "EC01" | "EC02" | "EC03";
 
 interface CommandAction {
   eq: MotorEq;
-  op: "SET_RPM" | "SET_RPM_PCT";
-  rpm?: number;
-  pct?: number;
+  op: "SET_RPM_PCT";
+  pct: number;
 }
 
 interface CommandBody {
@@ -60,15 +59,9 @@ export async function POST(
           { status: 400 }
         );
       }
-      if (a.op === "SET_RPM" && (typeof a.rpm !== "number" || a.rpm < 0)) {
+      if (a.op !== "SET_RPM_PCT" || typeof a.pct !== "number" || a.pct < 0 || a.pct > 100) {
         return NextResponse.json(
-          { error: `SET_RPM requires rpm (number >= 0)` },
-          { status: 400 }
-        );
-      }
-      if (a.op === "SET_RPM_PCT" && (typeof a.pct !== "number" || a.pct < 0 || a.pct > 100)) {
-        return NextResponse.json(
-          { error: `SET_RPM_PCT requires pct (0-100)` },
+          { error: "SET_RPM_PCT requires pct (0-100)" },
           { status: 400 }
         );
       }
