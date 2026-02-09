@@ -26,14 +26,8 @@ const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"
   loading: () => <div className="h-[260px] min-h-[260px] w-full" />,
 });
 
-async function fetchFarmDetail(
-  registNo: string,
-  stallNo?: number
-): Promise<FarmDetailDTO> {
-  const url = stallNo
-    ? `/api/farms/${registNo}/detail?stallNo=${stallNo}`
-    : `/api/farms/${registNo}/detail`;
-  const res = await fetch(url);
+async function fetchFarmDetail(registNo: string): Promise<FarmDetailDTO> {
+  const res = await fetch(`/api/farms/${registNo}/detail`);
   if (!res.ok) {
     throw new Error("Failed to fetch farm detail");
   }
@@ -69,10 +63,18 @@ export default function FarmDetailPage() {
   };
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["farm-detail", registNo, currentStall],
-    queryFn: () => fetchFarmDetail(registNo, currentStall),
+    queryKey: ["farm-detail", registNo],
+    queryFn: () => fetchFarmDetail(registNo),
     refetchInterval: 3000, // 3초 폴링
   });
+
+  useEffect(() => {
+    if (!data) return;
+    const stallNos = data.stalls.map((s) => s.stallNo);
+    if (stallNos.length > 0 && !stallNos.includes(currentStall)) {
+      setCurrentStall(stallNos[0]);
+    }
+  }, [data, currentStall]);
 
   useEffect(() => {
     if (!data) return;
@@ -252,6 +254,7 @@ export default function FarmDetailPage() {
           </div>
         )}
         <StallTabs
+          stalls={data.stalls}
           currentStall={currentStall}
           onStallChange={setCurrentStall}
           sticky

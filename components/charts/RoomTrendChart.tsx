@@ -13,30 +13,49 @@ interface RoomTrendChartProps {
   showTitle?: boolean;
 }
 
+// 데이터가 존재하는 시리즈만 반환 (최소 1개 로그에서 유효값 있음)
+function getVisibleSeries(logs: RoomLogPointDTO[]) {
+  const keys = ["ES01", "ES02", "ES03", "EC01"] as const;
+  const sensorMap = { ES01: "es01", ES02: "es02", ES03: "es03" } as const;
+  return keys.filter((key) => {
+    const hasData = logs.some((log) => {
+      if (key === "EC01") {
+        const arr = log.motors.ec01 ?? [];
+        return arr.length > 0 && arr.some((v) => v != null && !isNaN(v));
+      }
+      const arr = (log.sensors[sensorMap[key]] ?? []) as number[];
+      return arr.length > 0 && arr.some((v) => v != null && !isNaN(v));
+    });
+    return hasData;
+  });
+}
+
 export default function RoomTrendChart({
   logs,
   height = 300,
   showTitle = true,
 }: RoomTrendChartProps) {
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
-  // 로그 데이터를 차트 형식으로 변환
-  const chartData = logs.map((log) => {
-    const maxEs01 = log.sensors.es01.length > 0 ? Math.max(...log.sensors.es01) : 0;
-    const maxEs02 = log.sensors.es02.length > 0 ? Math.max(...log.sensors.es02) : 0;
-    const maxEs03 = log.sensors.es03.length > 0 ? Math.max(...log.sensors.es03) : 0;
-    const maxEc01 = log.motors.ec01.length > 0 ? Math.max(...log.motors.ec01) : 0;
+  const visibleSeries = getVisibleSeries(logs);
 
-    return {
+  const chartData = logs.map((log) => {
+    const maxEs01 = (log.sensors.es01 ?? []).length > 0 ? Math.max(...(log.sensors.es01 ?? [])) : null;
+    const maxEs02 = (log.sensors.es02 ?? []).length > 0 ? Math.max(...(log.sensors.es02 ?? [])) : null;
+    const maxEs03 = (log.sensors.es03 ?? []).length > 0 ? Math.max(...(log.sensors.es03 ?? [])) : null;
+    const maxEc01 = (log.motors.ec01 ?? []).length > 0 ? Math.max(...(log.motors.ec01 ?? [])) : null;
+
+    const row: Record<string, string | number | null> = {
       time: new Date(log.measureTsKst).toLocaleTimeString("ko-KR", {
         hour: "2-digit",
         minute: "2-digit",
       }),
-      ES01: convertSensorValue("es01", maxEs01),
-      ES02: convertSensorValue("es02", maxEs02),
-      ES03: convertSensorValue("es03", maxEs03),
-      EC01: convertMotorValue("ec01", maxEc01),
     };
-  }).reverse(); // 시간순 정렬
+    if (visibleSeries.includes("ES01")) row.ES01 = maxEs01 != null ? convertSensorValue("es01", maxEs01) : null;
+    if (visibleSeries.includes("ES02")) row.ES02 = maxEs02 != null ? convertSensorValue("es02", maxEs02) : null;
+    if (visibleSeries.includes("ES03")) row.ES03 = maxEs03 != null ? convertSensorValue("es03", maxEs03) : null;
+    if (visibleSeries.includes("EC01")) row.EC01 = maxEc01 != null ? convertMotorValue("ec01", maxEc01) : null;
+    return row;
+  }).reverse();
 
   return (
     <div className="bg-white p-4 rounded-lg shadow">
@@ -47,7 +66,9 @@ export default function RoomTrendChart({
           { key: "ES02", label: sensorLabel("es02"), color: "#82ca9d" },
           { key: "ES03", label: sensorLabel("es03"), color: "#ffc658" },
           { key: "EC01", label: motorLabel("ec01"), color: "#ff7300" },
-        ].map((item) => {
+        ]
+          .filter((item) => visibleSeries.includes(item.key))
+          .map((item) => {
           const hidden = hiddenKeys.has(item.key);
           return (
             <button
@@ -94,16 +115,16 @@ export default function RoomTrendChart({
                 return [`${Number(value).toLocaleString()} ${unit}`, name];
               }}
             />
-            {!hiddenKeys.has("ES01") && (
+            {visibleSeries.includes("ES01") && !hiddenKeys.has("ES01") && (
               <Line type="monotone" dataKey="ES01" stroke="#8884d8" />
             )}
-            {!hiddenKeys.has("ES02") && (
+            {visibleSeries.includes("ES02") && !hiddenKeys.has("ES02") && (
               <Line type="monotone" dataKey="ES02" stroke="#82ca9d" />
             )}
-            {!hiddenKeys.has("ES03") && (
+            {visibleSeries.includes("ES03") && !hiddenKeys.has("ES03") && (
               <Line type="monotone" dataKey="ES03" stroke="#ffc658" />
             )}
-            {!hiddenKeys.has("EC01") && (
+            {visibleSeries.includes("EC01") && !hiddenKeys.has("EC01") && (
               <Line type="monotone" dataKey="EC01" stroke="#ff7300" />
             )}
           </LineChart>

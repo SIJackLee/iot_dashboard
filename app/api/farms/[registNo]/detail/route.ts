@@ -110,23 +110,7 @@ export async function GET(
 
       for (const mapping of mappings) {
         const snapshot = snapshotRows.find((s) => s.key12 === mapping.key12);
-
-        if (!snapshot) {
-          offline++;
-          rooms.push({
-            key12: mapping.key12,
-            stallNo: mapping.stall_no,
-            roomNo: mapping.room_no,
-            ventMode: mapping.vent_mode as "exhaust" | "intake",
-            blowerCount: mapping.blower_count,
-            ventCount: mapping.vent_count,
-            measureTsKst: toKstIso(new Date()),
-            updatedAtKst: toKstIso(new Date()),
-            freshnessSec: Infinity,
-            state: "offline",
-          });
-          continue;
-        }
+        if (!snapshot) continue; // 조회 가능한 데이터 없는 방은 표시 제외
 
         const updatedAt = new Date(snapshot.updated_at);
         if (!lastUpdatedAt || updatedAt > lastUpdatedAt) {
@@ -167,10 +151,13 @@ export async function GET(
         });
       }
 
-      stalls.push({
-        stallNo,
-        rooms: rooms.sort((a, b) => a.roomNo - b.roomNo),
-      });
+      // 조회 가능한 데이터가 있는 방이 1건 이상인 축사만 표시
+      if (rooms.length > 0) {
+        stalls.push({
+          stallNo,
+          rooms: rooms.sort((a, b) => a.roomNo - b.roomNo),
+        });
+      }
     }
 
     // freshness P50/P95 계산
@@ -185,11 +172,12 @@ export async function GET(
       freshnessP95Sec = sorted[p95Index];
     }
 
+    const totalRooms = stalls.reduce((sum, s) => sum + s.rooms.length, 0);
     return NextResponse.json({
       serverNowKst: nowKst,
       farm: {
         registNo,
-        totalRooms: mappingRows.length,
+        totalRooms,
       },
       summary: {
         normal,

@@ -9,8 +9,7 @@ import { convertSensorValue, getSensorUnit, sensorLabel } from "@/lib/labels";
 
 type SensorKey = "es01" | "es02" | "es03" | "es04" | "es09";
 
-const LINE_KEYS = ["v1", "v2", "v3", "v4"] as const;
-const LINE_OPACITIES = [1, 0.8, 0.6, 0.4];
+const MAX_SLOTS = 6;
 
 interface SensorTrendChartProps {
   logs: RoomLogPointDTO[];
@@ -37,27 +36,33 @@ export default function SensorTrendChart({
   const color = SENSOR_COLORS[sensorKey];
   const isMobile = typeof window !== "undefined"
     && window.matchMedia("(max-width: 639px)").matches;
+
+  // 실제 데이터가 존재하는 슬롯 수
+  const slotCount = Math.min(
+    Math.max(0, ...logs.map((log) => (log.sensors[sensorKey] ?? []).length)),
+    MAX_SLOTS
+  );
+  const lineKeys = Array.from({ length: slotCount }, (_, i) => `v${i + 1}`);
+  const lineOpacities = [1, 0.9, 0.8, 0.7, 0.6, 0.5];
+
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(
-    () => (isMobile ? new Set(["v3", "v4"]) : new Set())
+    () => (isMobile ? new Set(lineKeys.slice(2)) : new Set())
   );
 
   const chartData = logs
     .map((log) => {
-      const values = log.sensors[sensorKey] ?? [];
-      const valueSlots = LINE_KEYS.map((_, index) => {
-        const raw = values[index];
-        return raw == null ? null : convertSensorValue(sensorKey, raw);
-      });
-      return {
+      const values = (log.sensors[sensorKey] ?? []) as number[];
+      const row: Record<string, string | number | null> = {
         time: new Date(log.measureTsKst).toLocaleTimeString("ko-KR", {
           hour: "2-digit",
           minute: "2-digit",
         }),
-        v1: valueSlots[0],
-        v2: valueSlots[1],
-        v3: valueSlots[2],
-        v4: valueSlots[3],
       };
+      lineKeys.forEach((key, idx) => {
+        const raw = values[idx];
+        row[key] = raw != null ? convertSensorValue(sensorKey, raw) : null;
+      });
+      return row;
     })
     .reverse();
 
@@ -67,7 +72,7 @@ export default function SensorTrendChart({
         <div className="text-sm font-semibold mb-3">{sensorLabel(sensorKey)}</div>
       )}
       <div className="flex flex-wrap gap-2 text-xs mb-3">
-        {LINE_KEYS.map((key, index) => {
+        {lineKeys.map((key, index) => {
           const hidden = hiddenKeys.has(key);
           return (
             <button
@@ -113,7 +118,7 @@ export default function SensorTrendChart({
                 `${sensorLabel(sensorKey)} ${name}`,
               ]}
             />
-            {LINE_KEYS.map((key, index) =>
+            {lineKeys.map((key, index) =>
               hiddenKeys.has(key) ? null : (
                 <Line
                   key={key}
@@ -121,7 +126,7 @@ export default function SensorTrendChart({
                   dataKey={key}
                   name={`${index + 1}`}
                   stroke={color}
-                  strokeOpacity={LINE_OPACITIES[index]}
+                  strokeOpacity={lineOpacities[index] ?? 0.5}
                   dot={false}
                   isAnimationActive={false}
                 />

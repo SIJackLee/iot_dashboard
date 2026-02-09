@@ -201,12 +201,11 @@ export async function GET(request: Request) {
       farmMap.get(registNo)!.push(mapping);
     }
     
-    // 전체 농장 수 계산 (farmMap의 크기 = 실제 반환되는 items의 개수)
-    const totalCount = farmMap.size;
+    // 전체 농장 수는 items 구축 후 필터된 개수로 설정
     
     // 디버깅: 실제 조회된 데이터 확인
     if (process.env.NODE_ENV === "development") {
-      console.log(`[farms/summary] Total mapping rows: ${mappingRows.length}, Unique farms: ${totalCount}`);
+      console.log(`[farms/summary] Total mapping rows: ${mappingRows.length}, Unique farms: ${farmMap.size}`);
     }
 
     const now = new Date();
@@ -240,10 +239,7 @@ export async function GET(request: Request) {
       for (const mapping of mappings) {
         const snapshot = snapshotRows.find((s) => s.key12 === mapping.key12);
 
-        if (!snapshot) {
-          offline++;
-          continue;
-        }
+        if (!snapshot) continue; // 조회 가능한 데이터 없는 방은 카운트·표시 제외
 
         const updatedAt = new Date(snapshot.updated_at);
         if (!lastUpdatedAt || updatedAt > lastUpdatedAt) {
@@ -274,9 +270,13 @@ export async function GET(request: Request) {
         ? diffSec(now, lastUpdatedAt)
         : null;
 
+      // 조회 가능한 데이터가 있는 농장만 표시 (스냅샷 1건 이상)
+      const hasQueryableData = normal + warn + danger > 0 || lastUpdatedAt != null;
+      if (!hasQueryableData) continue;
+
       items.push({
         registNo,
-        totalRooms: mappings.length,
+        totalRooms: normal + warn + danger + offline,
         normal,
         warn,
         danger,
@@ -286,10 +286,11 @@ export async function GET(request: Request) {
       });
     }
 
+    const totalCount = items.length; // 조회 가능한 데이터가 있는 농장만 카운트
     const responseData: FarmsSummaryResponseDTO = {
       serverNowKst: nowKst,
       items,
-      totalCount, // farmMap.size = 실제 반환되는 전체 농장 수
+      totalCount,
     };
     summaryCache = {
       data: responseData,

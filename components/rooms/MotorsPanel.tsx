@@ -53,24 +53,29 @@ export default function MotorsPanel({ motors }: MotorsPanelProps) {
                 <span className="font-medium text-sm">{motorLabel(key)}</span>
               </div>
               
-              {/* 통계 요약 */}
-              <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
-                <div className="text-center">
-                  <div className="text-xs text-gray-500">최대</div>
-                  <div className="font-semibold text-sm text-red-600">{stats.max} {unit}</div>
+              {/* 통계 요약: 배열 길이 > 1일 때만 */}
+              {arr.length > 1 && (
+                <div className="grid grid-cols-3 gap-2 mb-2 pt-2 border-t">
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500">최대</div>
+                    <div className="font-semibold text-sm text-red-600">{stats.max} {unit}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500">최소</div>
+                    <div className="font-semibold text-sm text-blue-600">{stats.min} {unit}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500">평균</div>
+                    <div className="font-semibold text-sm text-green-600">{stats.avg} {unit}</div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-500">최소</div>
-                  <div className="font-semibold text-sm text-blue-600">{stats.min} {unit}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs text-gray-500">평균</div>
-                  <div className="font-semibold text-sm text-green-600">{stats.avg} {unit}</div>
-                </div>
-              </div>
+              )}
               
-              {/* 배열 값 배지 */}
-              <div className="grid grid-cols-2 gap-1.5">
+              {/* 배열 값 배지: 배열 길이만큼만 */}
+              <div
+                className="gap-1.5"
+                style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(arr.length, 4)}, minmax(0, 1fr))` }}
+              >
                 {arr.map((val, idx) => (
                   <div
                     key={idx}

@@ -9,8 +9,8 @@ import { convertMotorValue, getMotorUnit, motorLabel } from "@/lib/labels";
 
 type VentMode = "exhaust" | "intake";
 
-const BLOWER_KEYS = ["b1", "b2", "b3", "b4"] as const;
-const SECONDARY_KEYS = ["s1", "s2", "s3", "s4", "s5", "s6"] as const;
+const MAX_BLOWER = 4;
+const MAX_SECONDARY = 6;
 
 interface MotorTrendChartProps {
   logs: RoomLogPointDTO[];
@@ -36,10 +36,24 @@ export default function MotorTrendChart({
   const unit = getMotorUnit("ec01");
   const isMobile = typeof window !== "undefined"
     && window.matchMedia("(max-width: 639px)").matches;
+
+  // 실제 데이터가 존재하는 슬롯 수 계산 (ec01, ec02, ec03)
+  const ec01MaxLen = Math.max(0, ...logs.map((l) => (l.motors.ec01 ?? []).length));
+  const ec02MaxLen = Math.max(0, ...logs.map((l) => (l.motors.ec02 ?? []).length));
+  const ec03MaxLen = Math.max(0, ...logs.map((l) => (l.motors.ec03 ?? []).length));
+  const blowerSlotCount = Math.min(ec01MaxLen, MAX_BLOWER);
+  const secondarySlotCount = Math.min(
+    secondaryKey === "ec02" ? ec02MaxLen : ec03MaxLen,
+    MAX_SECONDARY
+  );
+
+  const blowerKeys = Array.from({ length: blowerSlotCount }, (_, i) => `b${i + 1}`);
+  const secondaryKeys = Array.from({ length: secondarySlotCount }, (_, i) => `s${i + 1}`);
+
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(
     () =>
       isMobile
-        ? new Set(["b2", "b3", "b4", "s2", "s3", "s4", "s5", "s6"])
+        ? new Set([...blowerKeys.slice(1), ...secondaryKeys.slice(1)])
         : new Set()
   );
 
@@ -47,30 +61,21 @@ export default function MotorTrendChart({
     .map((log) => {
       const ec01Values = log.motors.ec01 ?? [];
       const secondaryValues = log.motors[secondaryKey] ?? [];
-      const blowerSlots = BLOWER_KEYS.map((_, index) => {
-        const raw = ec01Values[index];
-        return raw == null ? null : convertMotorValue("ec01", raw);
-      });
-      const secondarySlots = SECONDARY_KEYS.map((_, index) => {
-        const raw = secondaryValues[index];
-        return raw == null ? null : convertMotorValue(secondaryKey, raw);
-      });
-      return {
+      const row: Record<string, string | number | null> = {
         time: new Date(log.measureTsKst).toLocaleTimeString("ko-KR", {
           hour: "2-digit",
           minute: "2-digit",
         }),
-        b1: blowerSlots[0],
-        b2: blowerSlots[1],
-        b3: blowerSlots[2],
-        b4: blowerSlots[3],
-        s1: secondarySlots[0],
-        s2: secondarySlots[1],
-        s3: secondarySlots[2],
-        s4: secondarySlots[3],
-        s5: secondarySlots[4],
-        s6: secondarySlots[5],
       };
+      blowerKeys.forEach((key, idx) => {
+        const raw = ec01Values[idx];
+        row[key] = raw != null ? convertMotorValue("ec01", raw) : null;
+      });
+      secondaryKeys.forEach((key, idx) => {
+        const raw = secondaryValues[idx];
+        row[key] = raw != null ? convertMotorValue(secondaryKey, raw) : null;
+      });
+      return row;
     })
     .reverse();
 
@@ -82,57 +87,61 @@ export default function MotorTrendChart({
         </div>
       )}
       <div className="flex flex-wrap gap-2 text-xs mb-3">
-        <button
-          type="button"
-          onClick={() =>
-            setHiddenKeys((prev) => {
-              const allHidden = BLOWER_KEYS.every((key) => prev.has(key));
-              const next = new Set(prev);
-              BLOWER_KEYS.forEach((key) => {
-                if (allHidden) next.delete(key);
-                else next.add(key);
-              });
-              return next;
-            })
-          }
-          className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
-            BLOWER_KEYS.every((key) => hiddenKeys.has(key)) ? "opacity-40" : ""
-          }`}
-          title={`송풍 전체 ${BLOWER_KEYS.every((key) => hiddenKeys.has(key)) ? "표시" : "숨김"}`}
-        >
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: MOTOR_COLORS.ec01 }}
-          />
-          송풍 전체
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            setHiddenKeys((prev) => {
-              const allHidden = SECONDARY_KEYS.every((key) => prev.has(key));
-              const next = new Set(prev);
-              SECONDARY_KEYS.forEach((key) => {
-                if (allHidden) next.delete(key);
-                else next.add(key);
-              });
-              return next;
-            })
-          }
-          className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
-            SECONDARY_KEYS.every((key) => hiddenKeys.has(key)) ? "opacity-40" : ""
-          }`}
-          title={`${secondaryLabel} 전체 ${
-            SECONDARY_KEYS.every((key) => hiddenKeys.has(key)) ? "표시" : "숨김"
-          }`}
-        >
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: MOTOR_COLORS[secondaryKey] }}
-          />
-          {secondaryLabel} 전체
-        </button>
-        {BLOWER_KEYS.map((key, index) => {
+        {blowerSlotCount > 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              setHiddenKeys((prev) => {
+                const allHidden = blowerKeys.every((key) => prev.has(key));
+                const next = new Set(prev);
+                blowerKeys.forEach((key) => {
+                  if (allHidden) next.delete(key);
+                  else next.add(key);
+                });
+                return next;
+              })
+            }
+            className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
+              blowerKeys.every((key) => hiddenKeys.has(key)) ? "opacity-40" : ""
+            }`}
+            title={`송풍 전체 ${blowerKeys.every((key) => hiddenKeys.has(key)) ? "표시" : "숨김"}`}
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: MOTOR_COLORS.ec01 }}
+            />
+            송풍 전체
+          </button>
+        )}
+        {secondarySlotCount > 0 && (
+          <button
+            type="button"
+            onClick={() =>
+              setHiddenKeys((prev) => {
+                const allHidden = secondaryKeys.every((key) => prev.has(key));
+                const next = new Set(prev);
+                secondaryKeys.forEach((key) => {
+                  if (allHidden) next.delete(key);
+                  else next.add(key);
+                });
+                return next;
+              })
+            }
+            className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
+              secondaryKeys.every((key) => hiddenKeys.has(key)) ? "opacity-40" : ""
+            }`}
+            title={`${secondaryLabel} 전체 ${
+              secondaryKeys.every((key) => hiddenKeys.has(key)) ? "표시" : "숨김"
+            }`}
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: MOTOR_COLORS[secondaryKey] }}
+            />
+            {secondaryLabel} 전체
+          </button>
+        )}
+        {blowerKeys.map((key, index) => {
           const hidden = hiddenKeys.has(key);
           return (
             <button
@@ -159,7 +168,7 @@ export default function MotorTrendChart({
             </button>
           );
         })}
-        {SECONDARY_KEYS.map((key, index) => {
+        {secondaryKeys.map((key, index) => {
           const hidden = hiddenKeys.has(key);
           return (
             <button
@@ -208,7 +217,7 @@ export default function MotorTrendChart({
                 return [`${Number(value).toLocaleString()} ${unit}`, label];
               }}
             />
-            {BLOWER_KEYS.map((key, index) =>
+            {blowerKeys.map((key, index) =>
               hiddenKeys.has(key) ? null : (
                 <Line
                   key={key}
@@ -221,7 +230,7 @@ export default function MotorTrendChart({
                 />
               )
             )}
-            {SECONDARY_KEYS.map((key, index) =>
+            {secondaryKeys.map((key, index) =>
               hiddenKeys.has(key) ? null : (
                 <Line
                   key={key}
