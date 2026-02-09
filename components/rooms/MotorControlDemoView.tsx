@@ -165,7 +165,11 @@ function FloorLayer({
                   : "none",
               }}
             >
-              🐷
+              <img
+                src="/images/pig.png"
+                alt="돼지"
+                className="w-14 h-14 sm:w-16 sm:h-16 object-contain"
+              />
             </span>
           </div>
         </div>
