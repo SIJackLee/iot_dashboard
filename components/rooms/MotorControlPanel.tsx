@@ -90,7 +90,8 @@ export default function MotorControlPanel({
   ) => {
     setStatusDisplay(null);
     setErrorMessage(null);
-    setAppliedMotor(null);
+    // 다른 모터의 적용 완료 메시지 유지: 같은 모터 재전송 또는 전체 전송 시에만 appliedMotor 초기화
+    setAppliedMotor((prev) => (motorKey ? (prev === motorKey ? null : prev) : null));
     if (motorKey) setSendingMotor(motorKey);
     if (pollRef.current) {
       clearInterval(pollRef.current);
