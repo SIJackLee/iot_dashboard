@@ -47,6 +47,7 @@ export default function MotorControlPanel({
   const [statusDisplay, setStatusDisplay] = useState<"[명령 전달]" | "[명령 적용]" | "[명령 실패]" | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [appliedMotor, setAppliedMotor] = useState<MotorKey | null>(null);
+  const [sendingMotor, setSendingMotor] = useState<MotorKey | null>(null);
   const appliedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastCmdIdRef = useRef<string | null>(null);
@@ -83,10 +84,14 @@ export default function MotorControlPanel({
   const motorKeysFromActions = (actions: { eq: string }[]): MotorKey[] =>
     actions.map((a) => (a.eq === "EC01" ? "ec01" : a.eq === "EC02" ? "ec02" : "ec03"));
 
-  const sendActions = async (actions: { eq: "EC01" | "EC02" | "EC03"; op: "SET_RPM_PCT"; pct: number }[]) => {
+  const sendActions = async (
+    actions: { eq: "EC01" | "EC02" | "EC03"; op: "SET_RPM_PCT"; pct: number }[],
+    motorKey?: MotorKey
+  ) => {
     setStatusDisplay(null);
     setErrorMessage(null);
     setAppliedMotor(null);
+    if (motorKey) setSendingMotor(motorKey);
     if (pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
@@ -159,6 +164,7 @@ export default function MotorControlPanel({
       setStatusDisplay(null);
     } finally {
       setLoading(false);
+      setSendingMotor(null);
     }
   };
 
@@ -186,14 +192,14 @@ export default function MotorControlPanel({
     const clamped = Math.min(100, Math.max(0, pct));
     setSliderValues((prev) => ({ ...prev, [k]: clamped }));
     setValues((prev) => ({ ...prev, [k]: String(clamped) }));
-    await sendActions([{ eq: eqOf(k), op: "SET_RPM_PCT", pct: clamped }]);
+    await sendActions([{ eq: eqOf(k), op: "SET_RPM_PCT", pct: clamped }], k);
   };
 
   const handleSliderCommitAndSend = async (k: MotorKey, pct: number) => {
     const clamped = Math.min(100, Math.max(0, pct));
     setSliderValues((prev) => ({ ...prev, [k]: clamped }));
     setValues((prev) => ({ ...prev, [k]: String(clamped) }));
-    await sendActions([{ eq: eqOf(k), op: "SET_RPM_PCT", pct: clamped }]);
+    await sendActions([{ eq: eqOf(k), op: "SET_RPM_PCT", pct: clamped }], k);
   };
 
   // 체험 모드: 게임형 UI (3층, 돼지, 팬 애니메이션)
@@ -213,6 +219,8 @@ export default function MotorControlPanel({
           loading={loading}
           errorMessage={errorMessage}
           appliedMotor={appliedMotor}
+          sendingMotor={sendingMotor}
+          statusDisplay={statusDisplay}
         />
       </div>
     );

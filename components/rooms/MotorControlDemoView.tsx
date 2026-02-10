@@ -33,6 +33,18 @@ function snapToNearest(value: number): number {
   return nearest;
 }
 
+function getStatusMessage(
+  motorKey: MotorKey,
+  sending: MotorKey | null,
+  applied: MotorKey | null,
+  status: "[명령 전달]" | "[명령 적용]" | "[명령 실패]" | null
+): string | null {
+  if (applied === motorKey) return "[명령 적용]";
+  if (status === "[명령 실패]" && sending === motorKey) return "[명령 실패]";
+  if (sending === motorKey) return "[명령 전달]";
+  return null;
+}
+
 function getCurrentRpm(motors: MotorsDTO | null | undefined, key: MotorKey): number | null {
   if (!motors) return null;
   const arr = key === "ec01" ? motors.ec01 : key === "ec02" ? motors.ec02 : motors.ec03;
@@ -50,6 +62,8 @@ interface MotorControlDemoViewProps {
   loading: boolean;
   errorMessage: string | null;
   appliedMotor: MotorKey | null;
+  sendingMotor: MotorKey | null;
+  statusDisplay: "[명령 전달]" | "[명령 적용]" | "[명령 실패]" | null;
 }
 
 export default function MotorControlDemoView({
@@ -61,6 +75,8 @@ export default function MotorControlDemoView({
   loading,
   errorMessage,
   appliedMotor,
+  sendingMotor,
+  statusDisplay,
 }: MotorControlDemoViewProps) {
   return (
     <div className="space-y-4">
@@ -78,6 +94,7 @@ export default function MotorControlDemoView({
             onPreset={(pct) => onPresetAndSend(k, pct)}
             loading={loading}
             applied={appliedMotor === k}
+            statusMessage={getStatusMessage(k, sendingMotor, appliedMotor, statusDisplay)}
           />
         ))}
       </div>
@@ -99,6 +116,7 @@ function FloorLayer({
   onPreset,
   loading,
   applied,
+  statusMessage,
 }: {
   motorKey: MotorKey;
   label: string;
@@ -109,6 +127,7 @@ function FloorLayer({
   onPreset: (pct: number) => void;
   loading: boolean;
   applied: boolean;
+  statusMessage: string | null;
 }) {
   const clamped = Math.min(100, Math.max(0, pct));
 
@@ -145,12 +164,27 @@ function FloorLayer({
           </Button>
         ))}
       </div>
-      {/* 헤더: 모터명 + 현재 RPM */}
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-xs font-medium text-gray-500">{label}</span>
-        <span className="text-sm font-semibold text-gray-700">
-          현재: {rpmText}
-        </span>
+      {/* 상태 메시지 + 헤더: 모터명 + 현재 RPM */}
+      <div className="flex flex-col gap-1 mb-3">
+        {statusMessage && (
+          <div
+            className={`text-xs font-semibold ${
+              statusMessage === "[명령 적용]"
+                ? "text-green-600"
+                : statusMessage === "[명령 실패]"
+                ? "text-red-600"
+                : "text-blue-600"
+            }`}
+          >
+            {statusMessage}
+          </div>
+        )}
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-medium text-gray-500">{label}</span>
+          <span className="text-sm font-semibold text-gray-700">
+            현재: {rpmText}
+          </span>
+        </div>
       </div>
 
       {/* 모바일(옵션 A): 세로 스택 */}
