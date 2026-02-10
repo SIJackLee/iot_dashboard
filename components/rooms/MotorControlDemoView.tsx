@@ -131,15 +131,15 @@ function FloorLayer({
 }) {
   const clamped = Math.min(100, Math.max(0, pct));
 
-  // 팬 회전: visualPct를 프리셋으로 스냅 후 FAN_DURATIONS 적용 (방안 A)
-  const visualPct = currentRpm != null && currentRpm > 0 ? Math.min(100, (currentRpm / 1500) * 100) : clamped;
+  // 애니메이션: 실제 현재 RPM 기준 (다중 사용자 시 일치성 확보)
+  const visualPct = currentRpm != null ? Math.min(100, (currentRpm / 1500) * 100) : clamped;
   const snappedPct = snapToNearest(visualPct);
   const fanDuration = FAN_DURATIONS[snappedPct] ?? (snappedPct <= 0 ? 0 : 2);
 
-  // 돼지 밀림/기울기 - 목표(슬라이더) 기준
-  const pigTilt = (clamped / 100) * 35;
-  const pigTranslate = (clamped / 100) * -55;
-  const pigShake = clamped >= 50 ? 1 : 0;
+  // 돼지 밀림/기울기 - 실제 현재 RPM 기준 (visualPct)
+  const pigTilt = (visualPct / 100) * 35;
+  const pigTranslate = (visualPct / 100) * -55;
+  const pigShake = visualPct >= 50 ? 1 : 0;
 
   const rpmText = currentRpm != null ? `${currentRpm.toLocaleString()} ${getMotorUnit(motorKey)}` : "—";
 
