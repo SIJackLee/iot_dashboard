@@ -158,7 +158,7 @@ function FloorLayer({
             size="sm"
             onClick={() => onPreset(pctVal)}
             disabled={loading}
-            className="min-h-[32px] min-w-[44px] text-xs"
+            className="min-h-[44px] min-w-[44px] text-xs touch-manipulation"
           >
             {pctVal === 0 ? "정지" : `${pctVal}%`}
           </Button>
@@ -286,7 +286,7 @@ function FloorLayer({
             onChange={(e) => onSliderChange(Number(e.target.value))}
             onMouseUp={() => onSliderCommit(snapToNearest(clamped))}
             onTouchEnd={() => onSliderCommit(snapToNearest(clamped))}
-            className="w-full h-3 rounded-full appearance-none bg-gray-200 accent-blue-600 cursor-grab active:cursor-grabbing"
+            className="w-full h-3 rounded-full appearance-none bg-gray-200 accent-blue-600 cursor-grab active:cursor-grabbing touch-manipulation"
           />
           <div className="text-sm font-semibold text-gray-600 text-center">
             {Math.round(clamped)}%

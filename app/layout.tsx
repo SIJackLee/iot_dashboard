@@ -19,6 +19,12 @@ export const metadata: Metadata = {
   description: "IoT 농장 모니터링 대시보드",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+} as const;
+
 export default function RootLayout({
   children,
 }: Readonly<{

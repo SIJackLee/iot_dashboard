@@ -184,7 +184,7 @@ export default function FarmDetailPage() {
           <Button
             onClick={() => router.push("/farms")}
             variant="outline"
-            className="mb-4"
+            className="mb-4 min-h-[44px] touch-manipulation"
           >
             ← 목록으로
           </Button>
@@ -209,6 +209,7 @@ export default function FarmDetailPage() {
             onClick={() =>
               setStatusFilter(["normal", "warn", "danger", "offline"])
             }
+            className="min-h-[44px] touch-manipulation"
           >
             전체 선택
           </Button>
@@ -216,6 +217,7 @@ export default function FarmDetailPage() {
             size="sm"
             variant="ghost"
             onClick={() => setStatusFilter([])}
+            className="min-h-[44px] touch-manipulation"
           >
             전체 해제
           </Button>
@@ -225,6 +227,7 @@ export default function FarmDetailPage() {
               size="sm"
               variant={statusFilter.includes(s.id) ? "default" : "outline"}
               onClick={() => handleStatusSelect(s.id)}
+              className="min-h-[44px] touch-manipulation"
             >
               {s.label} {s.count}
             </Button>

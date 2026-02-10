@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -20,6 +20,7 @@ import SensorTrendChart from "@/components/charts/SensorTrendChart";
 import MotorTrendChart from "@/components/charts/MotorTrendChart";
 import type { RoomSnapshotFullDTO, RoomLogsResponseDTO } from "@/types/dto";
 import { roomLabel, stallLabel, FARM_LABEL } from "@/lib/labels";
+import PullToRefresh from "@/components/common/PullToRefresh";
 
 async function fetchRoomFull(key12: string): Promise<RoomSnapshotFullDTO> {
   const res = await fetch(`/api/rooms/${key12}`);
@@ -50,6 +51,7 @@ async function fetchRoomLogs(
 export default function RoomDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const queryClient = useQueryClient();
   const key12 = params.key12 as string;
   const [timeRange, setTimeRange] = useState<"1h" | "24h" | "none">("1h");
   const [logItems, setLogItems] = useState<RoomLogsResponseDTO["items"]>([]);
@@ -156,6 +158,12 @@ export default function RoomDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <TopBar />
+      <PullToRefresh
+        onRefresh={async () => {
+          await queryClient.invalidateQueries({ queryKey: ["room-full", key12] });
+          await queryClient.invalidateQueries({ queryKey: ["room-logs", key12, timeRange] });
+        }}
+      >
       <main className="container mx-auto px-4 py-4 sm:py-6">
         <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -331,12 +339,13 @@ export default function RoomDetailPage() {
           </CardContent>
         </Card>
       </main>
+      </PullToRefresh>
       {chartOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg w-full max-w-5xl max-h-[85vh] overflow-auto shadow-lg">
-            <div className="flex items-center justify-between px-4 py-3 border-b">
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-0 sm:p-4">
+          <div className="bg-white w-full h-full sm:h-auto sm:max-h-[85vh] sm:max-w-5xl sm:rounded-lg overflow-auto shadow-lg">
+            <div className="flex items-center justify-between px-4 py-3 border-b sticky top-0 bg-white z-10">
               <div className="font-semibold">로그 차트 확대</div>
-              <Button variant="ghost" size="sm" onClick={() => setChartOpen(false)}>
+              <Button variant="ghost" size="sm" onClick={() => setChartOpen(false)} className="min-h-[44px] min-w-[44px] touch-manipulation">
                 <X className="h-4 w-4" />
               </Button>
             </div>

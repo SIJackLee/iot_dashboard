@@ -240,7 +240,7 @@ export default function MotorControlPanel({
               variant="outline"
               size="sm"
               onClick={() => applyPreset(pct)}
-              className="min-w-[52px]"
+              className="min-h-[44px] min-w-[52px] touch-manipulation"
             >
               {pct === 0 ? "정지" : `${pct}%`}
             </Button>
@@ -265,7 +265,7 @@ export default function MotorControlPanel({
                     setSliderValues((prev) => ({ ...prev, [k]: n }));
                     setValues((prev) => ({ ...prev, [k]: String(n) }));
                   }}
-                  className="flex-1 h-2 rounded-full appearance-none bg-gray-200 accent-blue-600"
+                  className="flex-1 h-3 sm:h-2 min-h-[44px] sm:min-h-0 rounded-full appearance-none bg-gray-200 accent-blue-600 touch-manipulation"
                 />
                 <Input
                   type="number"
@@ -282,7 +282,7 @@ export default function MotorControlPanel({
                       setSliderValues((prev) => ({ ...prev, [k]: Math.min(100, n) }));
                     }
                   }}
-                  className="h-9 w-20 shrink-0"
+                  className="min-h-[44px] h-auto w-20 shrink-0 touch-manipulation"
                 />
               </div>
             </div>
@@ -294,7 +294,7 @@ export default function MotorControlPanel({
             size="sm"
             onClick={handleSend}
             disabled={loading}
-            className="min-w-[100px]"
+            className="min-h-[44px] min-w-[100px] touch-manipulation"
           >
             {loading ? "전송 중..." : "명령 전송"}
           </Button>

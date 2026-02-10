@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Inbox, SearchX } from "lucide-react";
@@ -54,6 +54,10 @@ const AlertsTogglePanel = dynamic(() => import("@/components/farms/AlertsToggleP
   loading: () => <div className="h-[400px] w-full" />,
 });
 
+const PullToRefresh = dynamic(() => import("@/components/common/PullToRefresh"), {
+  ssr: false,
+});
+
 
 async function fetchFarmsSummary(limit?: number): Promise<FarmsSummaryResponseDTO> {
   const url = limit 
@@ -68,6 +72,7 @@ async function fetchFarmsSummary(limit?: number): Promise<FarmsSummaryResponseDT
 
 export default function FarmsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState("registNo");
@@ -417,6 +422,11 @@ export default function FarmsPage() {
           </>
         }
       />
+      <PullToRefresh
+        onRefresh={async () => {
+          await queryClient.invalidateQueries({ queryKey: ["farms-summary"] });
+        }}
+      >
       <main className="container mx-auto px-4 py-6">
         {data && (
           <FarmOverviewHeader
@@ -507,6 +517,7 @@ export default function FarmsPage() {
           )}
         </div>
       </main>
+      </PullToRefresh>
     </div>
   );
 }

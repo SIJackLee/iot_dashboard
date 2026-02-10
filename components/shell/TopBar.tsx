@@ -21,9 +21,14 @@ export default function TopBar({ summary }: TopBarProps) {
           <h1 className="text-xl font-bold text-gray-800">IoT Dashboard</h1>
         </Link>
         {summary && (
-          <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground">
-            {summary}
-          </div>
+          <>
+            <div className="hidden sm:flex items-center gap-3 text-xs text-muted-foreground">
+              {summary}
+            </div>
+            <div className="flex sm:hidden items-center gap-2 text-[11px] text-muted-foreground max-w-[50%] truncate">
+              {summary}
+            </div>
+          </>
         )}
       </div>
     </header>

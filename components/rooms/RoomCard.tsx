@@ -90,7 +90,7 @@ export default function RoomCard({
     <Card
       onClick={onClick}
       className={cn(
-        "cursor-pointer hover:shadow-md transition-all border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400",
+        "cursor-pointer hover:shadow-md transition-all border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 min-h-[60px] touch-manipulation active:scale-[0.98]",
         highlighted ? "ring-2 ring-yellow-200 animate-pulse" : "",
         getStateStyles(room.state)
       )}
