@@ -58,12 +58,12 @@
 }
 
 @keyframes pig-shake-small {
-  from { transform: translateX(-2px); }
-  to   { transform: translateX(2px); }
-}
-@keyframes pig-shake-large {
   from { transform: translateX(-5px); }
   to   { transform: translateX(5px); }
+}
+@keyframes pig-shake-large {
+  from { transform: translateX(-10px); }
+  to   { transform: translateX(10px); }
 }
 
 @keyframes motor-applied {
