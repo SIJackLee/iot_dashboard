@@ -139,8 +139,8 @@ function FloorLayer({
   // 돼지 밀림/기울기 - 실제 현재 RPM 기준 (visualPct)
   const pigTilt = (visualPct / 100) * 35;
   const pigTranslate = (visualPct / 100) * -55;
-  // 75%: 조금 흔들림, 100%: 크게 흔들림. ACKED면 요청 퍼센트(clamped)로, 아니면 RPM/슬라이더 중 큰 값으로
-  const pctForShake = applied ? clamped : Math.max(visualPct, clamped);
+  // 75%: 조금 흔들림, 100%: 크게 흔들림. ACKED면 요청 퍼센트로, 아니면 실제 RPM만 사용(다중 화면 일치)
+  const pctForShake = applied ? clamped : (currentRpm != null ? visualPct : clamped);
   const pigShakeAnim =
     pctForShake >= 100 ? "pig-shake-large" : pctForShake >= 75 ? "pig-shake-small" : null;
 
