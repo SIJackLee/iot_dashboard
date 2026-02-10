@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motorLabel } from "@/lib/labels";
 import MotorControlDemoView from "./MotorControlDemoView";
-import type { MotorsDTO } from "@/types/dto";
+import type { MotorsDTO, RoomState } from "@/types/dto";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
 const MOTOR_KEYS: MotorKey[] = ["ec01", "ec02", "ec03"];
@@ -23,6 +23,8 @@ interface MotorControlPanelProps {
   isDemoMode?: boolean;
   /** 현재 모터 RPM (체험 모드에서 표시) */
   motors?: MotorsDTO | null;
+  /** 방 상태 (offline 시 RPM/애니메이션 비표시) */
+  roomState?: RoomState;
 }
 
 export default function MotorControlPanel({
@@ -32,6 +34,7 @@ export default function MotorControlPanel({
   ventCount = 1,
   isDemoMode = false,
   motors = null,
+  roomState,
 }: MotorControlPanelProps) {
   const [values, setValues] = useState<Record<MotorKey, string>>({
     ec01: "",
@@ -211,6 +214,7 @@ export default function MotorControlPanel({
         <MotorControlDemoView
           sliderValues={sliderValues}
           motors={motors}
+          roomState={roomState}
           onSliderChange={(k, v) => {
             setSliderValues((prev) => ({ ...prev, [k]: v }));
             setValues((prev) => ({ ...prev, [k]: String(v) }));

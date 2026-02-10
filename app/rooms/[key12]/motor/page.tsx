@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AlertTriangle, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import TopBar from "@/components/shell/TopBar";
 import MotorControlPanel from "@/components/rooms/MotorControlPanel";
 import EmptyState from "@/components/common/EmptyState";
@@ -69,9 +70,17 @@ export default function RoomMotorPage() {
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <SlidersHorizontal className="h-6 w-6 shrink-0" />
             모터 제어
+            {roomData.state === "offline" && (
+              <Badge variant="secondary" className="bg-gray-400 text-white shrink-0">
+                OFFLINE
+              </Badge>
+            )}
           </h1>
           <p className="text-sm text-gray-600">
             {roomLabel(roomData.mapping.roomNo)} · {stallLabel(roomData.mapping.stallNo)}
+            {roomData.state === "offline" && (
+              <span className="block mt-1 text-gray-500">데이터 갱신 중단 · 적용 여부 확인 불가</span>
+            )}
           </p>
         </div>
 
@@ -83,6 +92,7 @@ export default function RoomMotorPage() {
             ventCount={roomData.mapping.ventCount}
             isDemoMode
             motors={roomData.motors}
+            roomState={roomData.state}
           />
         </div>
       </main>

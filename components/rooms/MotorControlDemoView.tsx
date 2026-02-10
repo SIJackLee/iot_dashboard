@@ -5,7 +5,7 @@
 
 import { Button } from "@/components/ui/button";
 import { motorLabel, getMotorUnit } from "@/lib/labels";
-import type { MotorsDTO } from "@/types/dto";
+import type { MotorsDTO, RoomState } from "@/types/dto";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
 const MOTOR_KEYS: MotorKey[] = ["ec01", "ec02", "ec03"];
@@ -56,6 +56,7 @@ function getCurrentRpm(motors: MotorsDTO | null | undefined, key: MotorKey): num
 interface MotorControlDemoViewProps {
   sliderValues: Record<MotorKey, number>;
   motors?: MotorsDTO | null;
+  roomState?: RoomState;
   onSliderChange: (key: MotorKey, value: number) => void;
   onSliderCommit: (key: MotorKey, value: number) => void;
   onPresetAndSend: (key: MotorKey, pct: number) => void;
@@ -69,6 +70,7 @@ interface MotorControlDemoViewProps {
 export default function MotorControlDemoView({
   sliderValues,
   motors = null,
+  roomState,
   onSliderChange,
   onSliderCommit,
   onPresetAndSend,
@@ -78,6 +80,7 @@ export default function MotorControlDemoView({
   sendingMotor,
   statusDisplay,
 }: MotorControlDemoViewProps) {
+  const isOffline = roomState === "offline";
   return (
     <div className="space-y-4">
       {/* 3층 구조 - 각 층 상단에 프리셋 */}
@@ -89,6 +92,7 @@ export default function MotorControlDemoView({
             label={motorLabel(k)}
             pct={sliderValues[k]}
             currentRpm={getCurrentRpm(motors, k)}
+            isOffline={isOffline}
             onSliderChange={(v) => onSliderChange(k, v)}
             onSliderCommit={(v) => onSliderCommit(k, v)}
             onPreset={(pct) => onPresetAndSend(k, pct)}
@@ -111,6 +115,7 @@ function FloorLayer({
   label,
   pct,
   currentRpm,
+  isOffline,
   onSliderChange,
   onSliderCommit,
   onPreset,
@@ -122,6 +127,7 @@ function FloorLayer({
   label: string;
   pct: number;
   currentRpm: number | null;
+  isOffline: boolean;
   onSliderChange: (v: number) => void;
   onSliderCommit: (v: number) => void;
   onPreset: (pct: number) => void;
@@ -131,20 +137,29 @@ function FloorLayer({
 }) {
   const clamped = Math.min(100, Math.max(0, pct));
 
-  // 애니메이션: 실제 현재 RPM 기준 (다중 사용자 시 일치성 확보)
-  const visualPct = currentRpm != null ? Math.min(100, (currentRpm / 1500) * 100) : clamped;
-  const snappedPct = snapToNearest(visualPct);
-  const fanDuration = FAN_DURATIONS[snappedPct] ?? (snappedPct <= 0 ? 0 : 2);
+  let rpmText: string;
+  let pigTilt: number;
+  let pigTranslate: number;
+  let fanDuration: number;
+  let pigShakeAnim: string | null;
 
-  // 돼지 밀림/기울기 - 실제 현재 RPM 기준 (visualPct)
-  const pigTilt = (visualPct / 100) * 35;
-  const pigTranslate = (visualPct / 100) * -55;
-  // 75%: 조금 흔들림, 100%: 크게 흔들림. ACKED면 요청 퍼센트로, 아니면 실제 RPM만 사용(다중 화면 일치)
-  const pctForShake = applied ? clamped : (currentRpm != null ? visualPct : clamped);
-  const pigShakeAnim =
-    pctForShake >= 100 ? "pig-shake-large" : pctForShake >= 75 ? "pig-shake-small" : null;
-
-  const rpmText = currentRpm != null ? `${currentRpm.toLocaleString()} ${getMotorUnit(motorKey)}` : "—";
+  if (isOffline) {
+    rpmText = "—";
+    pigTilt = 0;
+    pigTranslate = 0;
+    fanDuration = 0;
+    pigShakeAnim = null;
+  } else {
+    const visualPct = currentRpm != null ? Math.min(100, (currentRpm / 1500) * 100) : clamped;
+    const snappedPct = snapToNearest(visualPct);
+    fanDuration = FAN_DURATIONS[snappedPct] ?? (snappedPct <= 0 ? 0 : 2);
+    pigTilt = (visualPct / 100) * 35;
+    pigTranslate = (visualPct / 100) * -55;
+    const pctForShake = applied ? clamped : (currentRpm != null ? visualPct : clamped);
+    pigShakeAnim =
+      pctForShake >= 100 ? "pig-shake-large" : pctForShake >= 75 ? "pig-shake-small" : null;
+    rpmText = currentRpm != null ? `${currentRpm.toLocaleString()} ${getMotorUnit(motorKey)}` : "—";
+  }
 
   return (
     <div
