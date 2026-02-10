@@ -51,7 +51,7 @@ export default function RoomDetailPage() {
   const router = useRouter();
   const params = useParams();
   const key12 = params.key12 as string;
-  const [timeRange, setTimeRange] = useState<"1h" | "24h" | "none">("none");
+  const [timeRange, setTimeRange] = useState<"1h" | "24h" | "none">("1h");
   const [logItems, setLogItems] = useState<RoomLogsResponseDTO["items"]>([]);
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
