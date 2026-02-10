@@ -139,7 +139,9 @@ function FloorLayer({
   // 돼지 밀림/기울기 - 실제 현재 RPM 기준 (visualPct)
   const pigTilt = (visualPct / 100) * 35;
   const pigTranslate = (visualPct / 100) * -55;
-  const pigShake = visualPct >= 50 ? 1 : 0;
+  // 75%: 조금 흔들림, 100%: 크게 흔들림 (방안1)
+  const pigShakeAnim =
+    visualPct >= 100 ? "pig-shake-large" : visualPct >= 75 ? "pig-shake-small" : null;
 
   const rpmText = currentRpm != null ? `${currentRpm.toLocaleString()} ${getMotorUnit(motorKey)}` : "—";
 
@@ -200,8 +202,8 @@ function FloorLayer({
             <span
               className="inline-block"
               style={{
-                animation: pigShake
-                  ? "pig-shake 0.12s ease-in-out infinite alternate"
+                animation: pigShakeAnim
+                  ? `${pigShakeAnim} 0.12s ease-in-out infinite alternate`
                   : "none",
               }}
             >
@@ -254,8 +256,8 @@ function FloorLayer({
             <span
               className="inline-block"
               style={{
-                animation: pigShake
-                  ? "pig-shake 0.12s ease-in-out infinite alternate"
+                animation: pigShakeAnim
+                  ? `${pigShakeAnim} 0.12s ease-in-out infinite alternate`
                   : "none",
               }}
             >

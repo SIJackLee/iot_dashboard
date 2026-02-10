@@ -57,13 +57,13 @@
   }
 }
 
-@keyframes pig-shake {
-  from {
-    transform: translateX(-3px);
-  }
-  to {
-    transform: translateX(3px);
-  }
+@keyframes pig-shake-small {
+  from { transform: translateX(-2px); }
+  to   { transform: translateX(2px); }
+}
+@keyframes pig-shake-large {
+  from { transform: translateX(-5px); }
+  to   { transform: translateX(5px); }
 }
 
 @keyframes motor-applied {
