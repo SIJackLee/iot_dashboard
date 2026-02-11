@@ -48,6 +48,7 @@ export default function FarmDetailPage() {
   const registNo = params.registNo as string;
   const [currentStall, setCurrentStall] = useState(1);
   const [roomFull, setRoomFull] = useState<RoomSnapshotFullDTO | null>(null);
+  const [drawerError, setDrawerError] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   type StatusKey = "normal" | "warn" | "danger" | "offline";
   const [statusFilter, setStatusFilter] = useState<StatusKey[]>([]);
@@ -103,17 +104,21 @@ export default function FarmDetailPage() {
 
   const handleRoomClick = async (key12: string) => {
     setDrawerOpen(true);
+    setDrawerError(null);
+    setRoomFull(null);
     try {
       const full = await fetchRoomFull(key12);
       setRoomFull(full);
     } catch (err) {
       console.error("Failed to fetch room full:", err);
+      setDrawerError("방 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
     }
   };
 
   const handleCloseDrawer = () => {
     setDrawerOpen(false);
     setRoomFull(null);
+    setDrawerError(null);
   };
 
   if (isLoading) {
@@ -351,9 +356,12 @@ export default function FarmDetailPage() {
             />
           )}
         </div>
-        {drawerOpen && (
-          <RoomDetailDrawer room={roomFull} onClose={handleCloseDrawer} />
-        )}
+        <RoomDetailDrawer
+          open={drawerOpen}
+          room={roomFull}
+          error={drawerError}
+          onClose={handleCloseDrawer}
+        />
       </main>
     </div>
   );
