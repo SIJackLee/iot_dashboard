@@ -55,7 +55,7 @@ export default function RoomDetailDrawer({
             <div className="flex flex-col items-center justify-center py-12">
               <LoadingSpinner message="방 정보를 불러오는 중..." size="md" />
             </div>
-          ) : (
+          ) : room ? (
             <>
               <div>
                 <h3 className="font-semibold mb-2">기본 정보</h3>
@@ -78,7 +78,7 @@ export default function RoomDetailDrawer({
                 </Button>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
