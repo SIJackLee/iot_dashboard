@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TopBar from "@/components/shell/TopBar";
 import SensorsPanel from "@/components/rooms/SensorsPanel";
 import MotorsPanel from "@/components/rooms/MotorsPanel";
+import SensorCardGrid from "@/components/rooms/SensorCardGrid";
 import EmptyState from "@/components/common/EmptyState";
 import RoomDetailSkeleton from "@/components/skeletons/RoomDetailSkeleton";
 import SensorGaugeGrid from "@/components/charts/SensorGaugeGrid";
@@ -157,7 +158,10 @@ export default function RoomDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar />
+      <TopBar
+        lastUpdatedAt={roomData.timing.updatedAtKst}
+        pollingInterval={5000}
+      />
       <PullToRefresh
         onRefresh={async () => {
           await queryClient.invalidateQueries({ queryKey: ["room-full", key12] });
@@ -233,6 +237,16 @@ export default function RoomDetailPage() {
                 </span>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* 센서 카드 그리드 (스파크라인 포함) */}
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader>
+            <CardTitle className="text-base sm:text-lg">센서 현황</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SensorCardGrid sensors={roomData.sensors} logs={logItems} />
           </CardContent>
         </Card>
 

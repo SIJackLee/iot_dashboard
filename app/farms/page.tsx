@@ -58,6 +58,10 @@ const PullToRefresh = dynamic(() => import("@/components/common/PullToRefresh"),
   ssr: false,
 });
 
+const CriticalAlertBanner = dynamic(() => import("@/components/alerts/CriticalAlertBanner"), {
+  ssr: false,
+});
+
 
 async function fetchFarmsSummary(limit?: number): Promise<FarmsSummaryResponseDTO> {
   const url = limit 
@@ -421,6 +425,8 @@ export default function FarmsPage() {
             <span>전체 방 {totalRooms}</span>
           </>
         }
+        lastUpdatedAt={lastUpdatedAtKst}
+        pollingInterval={15000}
       />
       <PullToRefresh
         onRefresh={async () => {
@@ -444,6 +450,22 @@ export default function FarmsPage() {
           />
         )}
         
+        
+        {/* Critical Alert Banner for Danger Farms */}
+        {totalDanger > 0 && (
+          <CriticalAlertBanner
+            dangerRooms={baseItems
+              .filter((farm) => farm.danger > 0)
+              .map((farm) => ({
+                key12: farm.registNo,
+                stallNo: 0,
+                roomNo: farm.danger, // 위험 방 개수 표시용
+                registNo: farm.registNo,
+              }))}
+            onRoomClick={(registNo) => router.push(`/farms/${registNo}`)}
+            isFarmLevel
+          />
+        )}
         
         <div className="mt-6 space-y-4">
           {showDeferred && (
