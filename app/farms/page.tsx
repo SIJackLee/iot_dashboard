@@ -62,6 +62,10 @@ const CriticalAlertBanner = dynamic(() => import("@/components/alerts/CriticalAl
   ssr: false,
 });
 
+const StatusRibbon = dynamic(() => import("@/components/common/StatusRibbon"), {
+  ssr: false,
+});
+
 
 async function fetchFarmsSummary(limit?: number): Promise<FarmsSummaryResponseDTO> {
   const url = limit 
@@ -427,6 +431,15 @@ export default function FarmsPage() {
         }
         lastUpdatedAt={lastUpdatedAtKst}
         pollingInterval={15000}
+        dangerCount={totalDanger}
+        warnCount={totalWarn}
+      />
+      {/* Status Ribbon */}
+      <StatusRibbon
+        danger={totalDanger}
+        warn={totalWarn}
+        normal={totalNormal}
+        offline={totalOffline}
       />
       <PullToRefresh
         onRefresh={async () => {

@@ -5,12 +5,16 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import LiveIndicator from "@/components/common/LiveIndicator";
+import PersistentAlertCounter from "@/components/common/PersistentAlertCounter";
 
 interface TopBarProps {
   summary?: ReactNode;
   lastUpdatedAt?: string | null;
   isConnected?: boolean;
   pollingInterval?: number;
+  dangerCount?: number;
+  warnCount?: number;
+  onAlertClick?: () => void;
 }
 
 export default function TopBar({
@@ -18,23 +22,32 @@ export default function TopBar({
   lastUpdatedAt,
   isConnected = true,
   pollingInterval = 3000,
+  dangerCount = 0,
+  warnCount = 0,
+  onAlertClick,
 }: TopBarProps) {
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/farms"
             className="hover:opacity-80 transition-opacity cursor-pointer"
             aria-label="메인 페이지로 이동"
           >
-            <h1 className="text-xl font-bold text-gray-800">IoT Dashboard</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-800">IoT Dashboard</h1>
           </Link>
           {/* Live Indicator */}
           <LiveIndicator
             lastUpdatedAt={lastUpdatedAt}
             isConnected={isConnected}
             pollingInterval={pollingInterval}
+          />
+          {/* Persistent Alert Counter */}
+          <PersistentAlertCounter
+            dangerCount={dangerCount}
+            warnCount={warnCount}
+            onClick={onAlertClick}
           />
         </div>
         {summary && (

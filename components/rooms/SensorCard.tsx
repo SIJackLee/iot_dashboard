@@ -52,6 +52,20 @@ export default function SensorCard({
 
   const stateColor = getStateColor(currentMax);
 
+  // 트렌드 방향 계산
+  const trendDirection = useMemo(() => {
+    const data = history.length > 0 ? history : values;
+    if (data.length < 2) return "stable";
+    const recent = data.slice(-5);
+    const first = recent[0];
+    const last = recent[recent.length - 1];
+    const diff = last - first;
+    const threshold = Math.abs(first) * 0.05; // 5% 변화 기준
+    if (diff > threshold) return "up";
+    if (diff < -threshold) return "down";
+    return "stable";
+  }, [history, values]);
+
   // 스파크라인 데이터 준비
   const sparklineData = useMemo(() => {
     const data = history.length > 0 ? history : values;
@@ -109,10 +123,22 @@ export default function SensorCard({
         <span className="text-sm font-medium text-gray-700">
           {sensorLabel(sensorKey)}
         </span>
-        <span className={`text-lg font-bold ${stateColor.text}`}>
-          {displayValue.toFixed(1)}
-          <span className="text-xs font-normal ml-0.5">{unit}</span>
-        </span>
+        <div className="flex items-center gap-1.5">
+          {/* Trend Arrow */}
+          {trendDirection !== "stable" && (
+            <span
+              className={`text-xs ${
+                trendDirection === "up" ? "text-red-500" : "text-blue-500"
+              }`}
+            >
+              {trendDirection === "up" ? "▲" : "▼"}
+            </span>
+          )}
+          <span className={`text-lg font-bold ${stateColor.text}`}>
+            {displayValue.toFixed(1)}
+            <span className="text-xs font-normal ml-0.5">{unit}</span>
+          </span>
+        </div>
       </div>
 
       {/* Threshold Zone Indicator */}
@@ -155,7 +181,7 @@ export default function SensorCard({
 
       {/* Mini Sparkline */}
       {showSparkline && sparklineData && sparklineData.length >= 2 && (
-        <div className="h-8 w-full">
+        <div className="h-12 w-full">
           <svg
             viewBox="0 0 100 100"
             preserveAspectRatio="none"

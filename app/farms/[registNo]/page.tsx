@@ -21,6 +21,8 @@ import RoomGridSkeleton from "@/components/skeletons/RoomGridSkeleton";
 import { Badge } from "@/components/ui/badge";
 import type { FarmDetailDTO, RoomSnapshotFullDTO } from "@/types/dto";
 import CriticalAlertBanner from "@/components/alerts/CriticalAlertBanner";
+import StatusRibbon from "@/components/common/StatusRibbon";
+import Breadcrumbs from "@/components/common/Breadcrumbs";
 
 const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
   ssr: false,
@@ -199,8 +201,26 @@ export default function FarmDetailPage() {
       <TopBar
         lastUpdatedAt={data.summary.lastUpdatedAtKst}
         pollingInterval={3000}
+        dangerCount={data.summary.danger}
+        warnCount={data.summary.warn}
+      />
+      {/* Status Ribbon */}
+      <StatusRibbon
+        danger={data.summary.danger}
+        warn={data.summary.warn}
+        normal={data.summary.normal}
+        offline={data.summary.offline}
       />
       <main className="container mx-auto px-4 py-6">
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: "농장 목록", href: "/farms" },
+            { label: registNo },
+          ]}
+          className="mb-4"
+        />
+        
         {/* Critical Alert Banner */}
         {dangerRooms.length > 0 && (
           <CriticalAlertBanner
@@ -210,13 +230,6 @@ export default function FarmDetailPage() {
         )}
         
         <div className="mb-4">
-          <Button
-            onClick={() => router.push("/farms")}
-            variant="outline"
-            className="mb-4 min-h-[44px] touch-manipulation"
-          >
-            ← 목록으로
-          </Button>
           <h1 className="text-2xl font-bold">농장 상세: {registNo}</h1>
         </div>
         <KpiCards
