@@ -22,6 +22,7 @@ import MotorTrendChart from "@/components/charts/MotorTrendChart";
 import type { RoomSnapshotFullDTO, RoomLogsResponseDTO } from "@/types/dto";
 import { roomLabel, stallLabel, FARM_LABEL } from "@/lib/labels";
 import PullToRefresh from "@/components/common/PullToRefresh";
+import Breadcrumbs from "@/components/common/Breadcrumbs";
 
 async function fetchRoomFull(key12: string): Promise<RoomSnapshotFullDTO> {
   const res = await fetch(`/api/rooms/${key12}`);
@@ -169,18 +170,36 @@ export default function RoomDetailPage() {
         }}
       >
       <main className="container mx-auto px-4 py-4 sm:py-6">
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: "농장 목록", href: "/farms" },
+            { label: roomData.mapping.registNo, href: `/farms/${roomData.mapping.registNo}` },
+            { label: stallLabel(roomData.mapping.stallNo) },
+            { label: roomLabel(roomData.mapping.roomNo) },
+          ]}
+          className="mb-4"
+        />
+        
         <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Button
-              onClick={() => router.back()}
-              variant="outline"
-              className="min-h-[44px]"
-            >
-              ← 뒤로
-            </Button>
             <h1 className="text-xl sm:text-2xl font-bold">
               {roomLabel(roomData.mapping.roomNo)} 상세
             </h1>
+            {/* State Badge */}
+            <span
+              className={`px-2 py-1 text-xs font-medium rounded ${
+                roomData.state === "normal"
+                  ? "bg-green-100 text-green-700"
+                  : roomData.state === "warn"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : roomData.state === "danger"
+                  ? "bg-red-100 text-red-700"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {roomData.state.toUpperCase()}
+            </span>
           </div>
           <Button asChild variant="default" className="min-h-[44px] shrink-0">
             <Link href={`/rooms/${key12}/motor`} className="inline-flex items-center gap-2 min-h-[44px]">

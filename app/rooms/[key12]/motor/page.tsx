@@ -12,6 +12,7 @@ import TopBar from "@/components/shell/TopBar";
 import MotorControlPanel from "@/components/rooms/MotorControlPanel";
 import EmptyState from "@/components/common/EmptyState";
 import { roomLabel, stallLabel } from "@/lib/labels";
+import Breadcrumbs from "@/components/common/Breadcrumbs";
 import type { RoomSnapshotFullDTO } from "@/types/dto";
 
 async function fetchRoomFull(key12: string): Promise<RoomSnapshotFullDTO> {
@@ -61,12 +62,19 @@ export default function RoomMotorPage() {
     <div className="min-h-screen bg-gray-50">
       <TopBar />
       <main className="container mx-auto px-4 py-4 sm:py-6 max-w-2xl">
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: "농장 목록", href: "/farms" },
+            { label: roomData.mapping.registNo, href: `/farms/${roomData.mapping.registNo}` },
+            { label: stallLabel(roomData.mapping.stallNo) },
+            { label: roomLabel(roomData.mapping.roomNo), href: `/rooms/${key12}` },
+            { label: "모터 제어" },
+          ]}
+          className="mb-4"
+        />
+        
         <div className="mb-4 sm:mb-6 flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <Button asChild variant="outline" className="min-h-[44px]">
-              <Link href={`/rooms/${key12}`}>← 방 상세</Link>
-            </Button>
-          </div>
           <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <SlidersHorizontal className="h-6 w-6 shrink-0" />
             모터 제어
