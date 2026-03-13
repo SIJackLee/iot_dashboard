@@ -20,6 +20,7 @@ import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
 import RoomGridSkeleton from "@/components/skeletons/RoomGridSkeleton";
 import { Badge } from "@/components/ui/badge";
 import type { FarmDetailDTO, RoomSnapshotFullDTO } from "@/types/dto";
+import CriticalAlertBanner from "@/components/alerts/CriticalAlertBanner";
 
 const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
   ssr: false,
@@ -181,10 +182,33 @@ export default function FarmDetailPage() {
     offline: "오프라인",
   };
 
+  // 위험 방 추출
+  const dangerRooms = data.stalls.flatMap((stall) =>
+    stall.rooms
+      .filter((room) => room.state === "danger")
+      .map((room) => ({
+        key12: room.key12,
+        stallNo: room.stallNo,
+        roomNo: room.roomNo,
+        registNo: registNo,
+      }))
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopBar />
+      <TopBar
+        lastUpdatedAt={data.summary.lastUpdatedAtKst}
+        pollingInterval={3000}
+      />
       <main className="container mx-auto px-4 py-6">
+        {/* Critical Alert Banner */}
+        {dangerRooms.length > 0 && (
+          <CriticalAlertBanner
+            dangerRooms={dangerRooms}
+            onRoomClick={handleRoomClick}
+          />
+        )}
+        
         <div className="mb-4">
           <Button
             onClick={() => router.push("/farms")}
