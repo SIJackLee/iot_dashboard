@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TopBar from "@/components/shell/TopBar";
-import SensorsPanel from "@/components/rooms/SensorsPanel";
+
 import MotorsPanel from "@/components/rooms/MotorsPanel";
 import SensorCardGrid from "@/components/rooms/SensorCardGrid";
 import EmptyState from "@/components/common/EmptyState";
 import RoomDetailSkeleton from "@/components/skeletons/RoomDetailSkeleton";
-import SensorGaugeGrid from "@/components/charts/SensorGaugeGrid";
+
 import SensorTrendChart from "@/components/charts/SensorTrendChart";
 import MotorTrendChart from "@/components/charts/MotorTrendChart";
 import type { RoomSnapshotFullDTO, RoomLogsResponseDTO } from "@/types/dto";
@@ -259,7 +259,7 @@ export default function RoomDetailPage() {
           </CardContent>
         </Card>
 
-        {/* 센서 카드 그리드 (스파크라인 포함) */}
+        {/* 센서 현황 (메인 센서 위젯) */}
         <Card className="mb-4 sm:mb-6">
           <CardHeader>
             <CardTitle className="text-base sm:text-lg">센서 현황</CardTitle>
@@ -269,20 +269,15 @@ export default function RoomDetailPage() {
           </CardContent>
         </Card>
 
-        {/* 센서 게이지 그리드 */}
+        {/* 모터 상태 */}
         <Card className="mb-4 sm:mb-6">
           <CardHeader>
-            <CardTitle className="text-base sm:text-lg">센서 상태 게이지</CardTitle>
+            <CardTitle className="text-base sm:text-lg">모터 상태</CardTitle>
           </CardHeader>
           <CardContent>
-            <SensorGaugeGrid sensors={roomData.sensors} />
+            <MotorsPanel motors={roomData.motors} />
           </CardContent>
         </Card>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-          <SensorsPanel sensors={roomData.sensors} />
-          <MotorsPanel motors={roomData.motors} />
-        </div>
 
         <Card>
           <CardHeader>
