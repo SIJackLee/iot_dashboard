@@ -44,7 +44,7 @@ export default function LiveIndicator({
   };
 
   const isStale = secondsAgo !== null && secondsAgo > (pollingInterval / 1000) * 3;
-  const isOffline = secondsAgo !== null && secondsAgo > 60;
+  const isOffline = secondsAgo !== null && secondsAgo > 600;
 
   return (
     <div className="flex items-center gap-2">
