@@ -212,7 +212,7 @@ export async function GET(request: Request) {
     const nowKst = serverNowKst();
 
     // farm별 summary 계산
-    // getFarmOfflineThSec는 캐시가 있으면 사용, 없으면 기본값(211초)으로 빠르게 처리
+    // getFarmOfflineThSec는 캐시가 있으면 사용, 없으면 기본값(600초)으로 빠르게 처리
     // (실제 계산은 백그라운드에서 수행되도록 캐시에 저장)
     const items: FarmSummaryDTO[] = [];
     const registNos = Array.from(farmMap.keys());
@@ -222,13 +222,13 @@ export async function GET(request: Request) {
     const offlineThSecMap = new Map<string, number>();
     
     // 모든 농장에 기본값 사용 (캐시는 나중에 백그라운드에서 업데이트)
-    // 초기 로드 속도 최적화를 위해 기본값(211초)만 사용
+    // 초기 로드 속도 최적화를 위해 기본값(600초)만 사용
     for (const registNo of registNos) {
-      offlineThSecMap.set(registNo, 211); // 기본값 사용
+      offlineThSecMap.set(registNo, 600); // 기본값 사용
     }
 
     for (const [registNo, mappings] of farmMap.entries()) {
-      const offlineThSec = offlineThSecMap.get(registNo) || 211; // 기본값 211초
+      const offlineThSec = offlineThSecMap.get(registNo) || 600; // 기본값 600초
 
       let normal = 0;
       let warn = 0;

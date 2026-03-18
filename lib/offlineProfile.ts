@@ -9,7 +9,7 @@ const OFFLINE_LOOKBACK_MIN = parseInt(
   10
 );
 const OFFLINE_TH_DEFAULT_SEC = parseInt(
-  process.env.OFFLINE_TH_DEFAULT_SEC || "211",
+  process.env.OFFLINE_TH_DEFAULT_SEC || "600",
   10
 );
 const FARM_MIN_SAMPLES = 50; // 최소 표본 수
