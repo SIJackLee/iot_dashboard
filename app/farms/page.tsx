@@ -62,11 +62,6 @@ const CriticalAlertBanner = dynamic(() => import("@/components/alerts/CriticalAl
   ssr: false,
 });
 
-const StatusRibbon = dynamic(() => import("@/components/common/StatusRibbon"), {
-  ssr: false,
-});
-
-
 async function fetchFarmsSummary(limit?: number): Promise<FarmsSummaryResponseDTO> {
   const url = limit 
     ? `/api/farms/summary?limit=${limit}`
@@ -422,24 +417,10 @@ export default function FarmsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <TopBar
-        summary={
-          <>
-            <span>정상률 {normalRate.toFixed(1)}%</span>
-            <span>오프라인율 {offlineRate.toFixed(1)}%</span>
-            <span>전체 방 {totalRooms}</span>
-          </>
-        }
         lastUpdatedAt={lastUpdatedAtKst}
         pollingInterval={15000}
         dangerCount={totalDanger}
         warnCount={totalWarn}
-      />
-      {/* Status Ribbon */}
-      <StatusRibbon
-        danger={totalDanger}
-        warn={totalWarn}
-        normal={totalNormal}
-        offline={totalOffline}
       />
       <PullToRefresh
         onRefresh={async () => {

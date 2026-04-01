@@ -4,21 +4,19 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { AlertTriangle, FileX, SlidersHorizontal, X } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { AlertTriangle, FileX, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TopBar from "@/components/shell/TopBar";
-import SensorsPanel from "@/components/rooms/SensorsPanel";
-import MotorsPanel from "@/components/rooms/MotorsPanel";
+import MotorCardGrid from "@/components/rooms/MotorCardGrid";
 import SensorCardGrid from "@/components/rooms/SensorCardGrid";
 import EmptyState from "@/components/common/EmptyState";
 import RoomDetailSkeleton from "@/components/skeletons/RoomDetailSkeleton";
-import SensorGaugeGrid from "@/components/charts/SensorGaugeGrid";
 import SensorTrendChart from "@/components/charts/SensorTrendChart";
-import MotorTrendChart from "@/components/charts/MotorTrendChart";
+import MotorSingleTrendChart from "@/components/charts/MotorSingleTrendChart";
 import type { RoomSnapshotFullDTO, RoomLogsResponseDTO } from "@/types/dto";
 import { roomLabel, stallLabel, FARM_LABEL } from "@/lib/labels";
 import PullToRefresh from "@/components/common/PullToRefresh";
@@ -51,7 +49,6 @@ async function fetchRoomLogs(
 }
 
 export default function RoomDetailPage() {
-  const router = useRouter();
   const params = useParams();
   const queryClient = useQueryClient();
   const key12 = params.key12 as string;
@@ -60,7 +57,12 @@ export default function RoomDetailPage() {
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [lastLogsLoadedAt, setLastLogsLoadedAt] = useState<string | null>(null);
-  const [chartOpen, setChartOpen] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState<
+    | { kind: "sensor"; key: "es01" | "es02" | "es03" | "es04" | "es09" }
+    | { kind: "motor"; key: "ec01" | "ec02" | "ec03" }
+    | null
+  >(null);
+  const logSectionRef = useRef<HTMLDivElement | null>(null);
 
   const { data: roomData, isLoading: roomLoading } = useQuery({
     queryKey: ["room-full", key12],
@@ -98,13 +100,8 @@ export default function RoomDetailPage() {
     }
   }, [logsData, timeRange]);
 
-  const sensorTrendKeys: Array<"es01" | "es02" | "es03" | "es04" | "es09"> = [
-    "es01",
-    "es02",
-    "es03",
-    "es04",
-    "es09",
-  ];
+  const timeRangeLabel =
+    timeRange === "1h" ? "최근 1시간" : timeRange === "24h" ? "최근 24시간" : "";
 
   const handleLoadMore = async () => {
     if (timeRange === "none" || !nextCursor || isLoadingMore) return;
@@ -265,30 +262,41 @@ export default function RoomDetailPage() {
             <CardTitle className="text-base sm:text-lg">센서 현황</CardTitle>
           </CardHeader>
           <CardContent>
-            <SensorCardGrid sensors={roomData.sensors} logs={logItems} />
+            <SensorCardGrid
+              sensors={roomData.sensors}
+              logs={logItems}
+              onSelectSensor={(sensorKey) => {
+                if (timeRange === "none") return;
+                setSelectedDetail({ kind: "sensor", key: sensorKey });
+                setTimeout(() => logSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+              }}
+            />
           </CardContent>
         </Card>
 
-        {/* 센서 게이지 그리드 */}
         <Card className="mb-4 sm:mb-6">
           <CardHeader>
-            <CardTitle className="text-base sm:text-lg">센서 상태 게이지</CardTitle>
+            <CardTitle className="text-base sm:text-lg">모터 현황</CardTitle>
           </CardHeader>
           <CardContent>
-            <SensorGaugeGrid sensors={roomData.sensors} />
+            <MotorCardGrid
+              motors={roomData.motors}
+              logs={logItems}
+              onSelectMotor={(motorKey) => {
+                if (timeRange === "none") return;
+                setSelectedDetail({ kind: "motor", key: motorKey });
+                setTimeout(() => logSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+              }}
+            />
           </CardContent>
         </Card>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-          <SensorsPanel sensors={roomData.sensors} />
-          <MotorsPanel motors={roomData.motors} />
-        </div>
 
         <Card>
           <CardHeader>
             <CardTitle className="text-base sm:text-lg">로그 데이터</CardTitle>
           </CardHeader>
           <CardContent>
+            <div ref={logSectionRef} />
             <Tabs
               value={timeRange}
               onValueChange={(value) => setTimeRange(value as "1h" | "24h" | "none")}
@@ -316,27 +324,38 @@ export default function RoomDetailPage() {
             )}
             {logItems.length > 0 && (
               <div className="space-y-2">
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setChartOpen(true)}
-                    className="min-h-[44px] h-auto px-3 py-2 text-sm sm:text-base"
-                  >
-                    차트 확대
-                  </Button>
-                </div>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    {sensorTrendKeys.map((key) => (
+                {selectedDetail && timeRange !== "none" && (
+                  <div className="rounded-lg border bg-white p-3 shadow-sm">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div className="font-semibold text-sm">
+                        {selectedDetail.kind === "sensor" ? "센서" : "모터"} 상세 그래프 · {timeRangeLabel}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedDetail(null)}
+                        className="min-h-[44px]"
+                      >
+                        닫기
+                      </Button>
+                    </div>
+                    {selectedDetail.kind === "sensor" ? (
                       <SensorTrendChart
-                        key={key}
                         logs={logItems}
-                        sensorKey={key}
+                        sensorKey={selectedDetail.key}
+                        height={360}
                       />
-                    ))}
+                    ) : (
+                      <MotorSingleTrendChart
+                        logs={logItems}
+                        motorKey={selectedDetail.key}
+                        height={360}
+                      />
+                    )}
                   </div>
-                  <MotorTrendChart logs={logItems} />
+                )}
+                <div className="rounded-lg border bg-gray-50 p-4 text-sm text-gray-600">
+                  센서/모터 현황 카드를 클릭하면 {timeRangeLabel} 로그 상세 그래프를 확인할 수 있습니다.
                 </div>
               </div>
             )}
@@ -373,33 +392,6 @@ export default function RoomDetailPage() {
         </Card>
       </main>
       </PullToRefresh>
-      {chartOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-0 sm:p-4">
-          <div className="bg-white w-full h-full sm:h-auto sm:max-h-[85vh] sm:max-w-5xl sm:rounded-lg overflow-auto shadow-lg">
-            <div className="flex items-center justify-between px-4 py-3 border-b sticky top-0 bg-white z-10">
-              <div className="font-semibold">로그 차트 확대</div>
-              <Button variant="ghost" size="sm" onClick={() => setChartOpen(false)} className="min-h-[44px] min-w-[44px] touch-manipulation">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="p-4">
-              <div className="space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {sensorTrendKeys.map((key) => (
-                    <SensorTrendChart
-                      key={key}
-                      logs={logItems}
-                      sensorKey={key}
-                      height={260}
-                    />
-                  ))}
-                </div>
-                <MotorTrendChart logs={logItems} height={360} />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

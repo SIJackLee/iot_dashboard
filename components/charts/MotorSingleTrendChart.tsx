@@ -1,45 +1,60 @@
-// SensorTrendChart 컴포넌트 - 단일 센서 트렌드 차트
-
 "use client";
 
 import { useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import type { RoomLogPointDTO } from "@/types/dto";
-import { convertSensorValue, getSensorUnit, sensorLabel } from "@/lib/labels";
+import { convertMotorValue, getMotorUnit, motorLabel } from "@/lib/labels";
 
-type SensorKey = "es01" | "es02" | "es03" | "es04" | "es09";
+type MotorKey = "ec01" | "ec02" | "ec03";
 
 const MAX_SLOTS = 6;
 
-interface SensorTrendChartProps {
+interface MotorSingleTrendChartProps {
   logs: RoomLogPointDTO[];
-  sensorKey: SensorKey;
+  motorKey: MotorKey;
   height?: number;
   showTitle?: boolean;
 }
 
-const SENSOR_COLORS: Record<SensorKey, string> = {
-  es01: "#8884d8",
-  es02: "#82ca9d",
-  es03: "#ffc658",
-  es04: "#ef4444",
-  es09: "#60a5fa",
+const MOTOR_COLORS: Record<MotorKey, string> = {
+  ec01: "#3b82f6",
+  ec02: "#f59e0b",
+  ec03: "#22c55e",
 };
 
-export default function SensorTrendChart({
+export default function MotorSingleTrendChart({
   logs,
-  sensorKey,
-  height = 220,
+  motorKey,
+  height = 320,
   showTitle = true,
-}: SensorTrendChartProps) {
-  const unit = getSensorUnit(sensorKey);
-  const color = SENSOR_COLORS[sensorKey];
-  const isMobile = typeof window !== "undefined"
-    && window.matchMedia("(max-width: 639px)").matches;
+}: MotorSingleTrendChartProps) {
+  const unit = getMotorUnit(motorKey);
+  const color = MOTOR_COLORS[motorKey];
+  const isMobile =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 639px)").matches;
 
-  // 실제 데이터가 존재하는 슬롯 수
+  const getValues = (log: RoomLogPointDTO): number[] => {
+    const motors = log.motors;
+    const raw =
+      motorKey === "ec01"
+        ? motors.ec01
+        : motorKey === "ec02"
+        ? motors.ec02
+        : motors.ec03;
+    return Array.isArray(raw) ? raw : [];
+  };
+
   const slotCount = Math.min(
-    Math.max(0, ...logs.map((log) => (log.sensors[sensorKey] ?? []).length)),
+    Math.max(0, ...logs.map((log) => getValues(log).length)),
     MAX_SLOTS
   );
   const lineKeys = Array.from({ length: slotCount }, (_, i) => `v${i + 1}`);
@@ -49,12 +64,11 @@ export default function SensorTrendChart({
     () => (isMobile ? new Set(lineKeys.slice(2)) : new Set())
   );
 
-  // 테이블에 해당 센서 데이터가 없으면 렌더링하지 않음
   if (slotCount === 0) return null;
 
   const chartData = logs
     .map((log) => {
-      const values = (log.sensors[sensorKey] ?? []) as number[];
+      const values = getValues(log);
       const row: Record<string, string | number | null> = {
         time: new Date(log.measureTsKst).toLocaleTimeString("ko-KR", {
           hour: "2-digit",
@@ -63,7 +77,7 @@ export default function SensorTrendChart({
       };
       lineKeys.forEach((key, idx) => {
         const raw = values[idx];
-        row[key] = raw != null ? convertSensorValue(sensorKey, raw) : null;
+        row[key] = raw != null ? convertMotorValue(motorKey, raw) : null;
       });
       return row;
     })
@@ -72,7 +86,7 @@ export default function SensorTrendChart({
   return (
     <div className="rounded-lg border bg-white p-3 shadow-sm">
       {showTitle && (
-        <div className="text-sm font-semibold mb-3">{sensorLabel(sensorKey)}</div>
+        <div className="text-sm font-semibold mb-3">{motorLabel(motorKey)}</div>
       )}
       <div className="flex flex-wrap gap-2 text-xs mb-3">
         {lineKeys.map((key, index) => {
@@ -92,12 +106,9 @@ export default function SensorTrendChart({
               className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
                 hidden ? "opacity-40" : ""
               }`}
-              title={`${sensorLabel(sensorKey)} ${index + 1} ${hidden ? "표시" : "숨김"}`}
+              title={`${motorLabel(motorKey)} ${index + 1} ${hidden ? "표시" : "숨김"}`}
             >
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: color }}
-              />
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
               {index + 1}
             </button>
           );
@@ -107,7 +118,7 @@ export default function SensorTrendChart({
         <ResponsiveContainer
           width="100%"
           height={height}
-          minHeight={180}
+          minHeight={200}
           minWidth={200}
           debounce={50}
         >
@@ -118,7 +129,7 @@ export default function SensorTrendChart({
             <Tooltip
               formatter={(value, name) => [
                 `${Number(value).toLocaleString()} ${unit}`,
-                `${sensorLabel(sensorKey)} ${name}`,
+                `${motorLabel(motorKey)} ${name}`,
               ]}
             />
             {lineKeys.map((key, index) =>
@@ -141,3 +152,4 @@ export default function SensorTrendChart({
     </div>
   );
 }
+

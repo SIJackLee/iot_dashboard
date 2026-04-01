@@ -29,9 +29,6 @@ interface MotorControlPanelProps {
 
 export default function MotorControlPanel({
   key12,
-  ventMode = "exhaust",
-  blowerCount = 1,
-  ventCount = 1,
   isDemoMode = false,
   motors = null,
   roomState,
@@ -176,16 +173,6 @@ export default function MotorControlPanel({
     const actions = buildActions(MOTOR_KEYS);
     if (actions.length === 0) {
       setErrorMessage("입력된 값이 없습니다. (EC01/EC02/EC03 중 최소 1개)");
-      setStatusDisplay(null);
-      return;
-    }
-    await sendActions(actions);
-  };
-
-  const handleSendSingle = async (k: MotorKey) => {
-    const actions = buildActions([k]);
-    if (actions.length === 0) {
-      setErrorMessage(`${motorLabel(k)} 값을 설정해 주세요. (0~100)`);
       setStatusDisplay(null);
       return;
     }

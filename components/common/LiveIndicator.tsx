@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface LiveIndicatorProps {
   lastUpdatedAt?: string | null;
@@ -15,25 +15,19 @@ export default function LiveIndicator({
   isConnected = true,
   pollingInterval = 3000,
 }: LiveIndicatorProps) {
-  const [secondsAgo, setSecondsAgo] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
-    if (!lastUpdatedAt) {
-      setSecondsAgo(null);
-      return;
-    }
-
-    const update = () => {
-      const now = new Date();
-      const updated = new Date(lastUpdatedAt);
-      const diff = Math.floor((now.getTime() - updated.getTime()) / 1000);
-      setSecondsAgo(diff);
-    };
-
-    update();
-    const interval = setInterval(update, 1000);
+    const interval = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, [lastUpdatedAt]);
+  }, []);
+
+  const secondsAgo = useMemo(() => {
+    if (!lastUpdatedAt) return null;
+    const updatedMs = new Date(lastUpdatedAt).getTime();
+    if (Number.isNaN(updatedMs)) return null;
+    return Math.floor((nowMs - updatedMs) / 1000);
+  }, [lastUpdatedAt, nowMs]);
 
   const formatTimeAgo = (seconds: number | null): string => {
     if (seconds === null) return "-";

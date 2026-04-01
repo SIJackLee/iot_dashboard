@@ -4,7 +4,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import TopBar from "@/components/shell/TopBar";
-import SensorGaugeGrid from "@/components/charts/SensorGaugeGrid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RoomSnapshotFullDTO } from "@/types/dto";
 
@@ -56,17 +55,7 @@ export default function RealtimeDashboardPage() {
       <main className="container mx-auto px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">실시간 대시보드</h1>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 센서 게이지 그리드 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>센서 상태</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SensorGaugeGrid sensors={data.sensors} />
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 gap-6">
           {/* 트렌드 차트 */}
           <Card>
             <CardHeader>

@@ -3,8 +3,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useRouter, useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Filter, Inbox, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TopBar from "@/components/shell/TopBar";
@@ -21,7 +21,6 @@ import RoomGridSkeleton from "@/components/skeletons/RoomGridSkeleton";
 import { Badge } from "@/components/ui/badge";
 import type { FarmDetailDTO, RoomSnapshotFullDTO } from "@/types/dto";
 import CriticalAlertBanner from "@/components/alerts/CriticalAlertBanner";
-import StatusRibbon from "@/components/common/StatusRibbon";
 import Breadcrumbs from "@/components/common/Breadcrumbs";
 
 const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
@@ -46,7 +45,6 @@ async function fetchRoomFull(key12: string): Promise<RoomSnapshotFullDTO> {
 }
 
 export default function FarmDetailPage() {
-  const router = useRouter();
   const params = useParams();
   const registNo = params.registNo as string;
   const [currentStall, setCurrentStall] = useState(1);
@@ -72,12 +70,11 @@ export default function FarmDetailPage() {
     refetchInterval: 3000, // 3초 폴링
   });
 
-  useEffect(() => {
-    if (!data) return;
+  const effectiveStall = useMemo(() => {
+    if (!data) return currentStall;
     const stallNos = data.stalls.map((s) => s.stallNo);
-    if (stallNos.length > 0 && !stallNos.includes(currentStall)) {
-      setCurrentStall(stallNos[0]);
-    }
+    if (stallNos.length === 0) return currentStall;
+    return stallNos.includes(currentStall) ? currentStall : stallNos[0];
   }, [data, currentStall]);
 
   useEffect(() => {
@@ -159,7 +156,7 @@ export default function FarmDetailPage() {
     );
   }
 
-  const currentStallData = data.stalls.find((s) => s.stallNo === currentStall);
+  const currentStallData = data.stalls.find((s) => s.stallNo === effectiveStall);
   
   // 모든 stall의 rooms를 합쳐서 AlertsPanel에 전달
   const allRooms = data.stalls.flatMap((stall) => stall.rooms);
@@ -203,13 +200,6 @@ export default function FarmDetailPage() {
         pollingInterval={3000}
         dangerCount={data.summary.danger}
         warnCount={data.summary.warn}
-      />
-      {/* Status Ribbon */}
-      <StatusRibbon
-        danger={data.summary.danger}
-        warn={data.summary.warn}
-        normal={data.summary.normal}
-        offline={data.summary.offline}
       />
       <main className="container mx-auto px-4 py-6">
         {/* Breadcrumbs */}
@@ -300,7 +290,7 @@ export default function FarmDetailPage() {
         )}
         <StallTabs
           stalls={data.stalls}
-          currentStall={currentStall}
+          currentStall={effectiveStall}
           onStallChange={setCurrentStall}
           sticky
         />

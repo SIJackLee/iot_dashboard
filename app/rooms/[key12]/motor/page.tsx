@@ -3,10 +3,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AlertTriangle, SlidersHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import TopBar from "@/components/shell/TopBar";
 import MotorControlPanel from "@/components/rooms/MotorControlPanel";

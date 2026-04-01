@@ -2,6 +2,7 @@
 
 "use client";
 
+import type { Dispatch, SetStateAction } from "react";
 import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { RoomLogPointDTO } from "@/types/dto";
@@ -24,6 +25,74 @@ const MOTOR_COLORS: Record<MotorKey, string> = {
   ec03: "#34d399",
 };
 
+function ToggleGroup({
+  keys,
+  motorKey,
+  label,
+  hiddenKeys,
+  setHiddenKeys,
+}: {
+  keys: string[];
+  motorKey: MotorKey;
+  label: string;
+  hiddenKeys: Set<string>;
+  setHiddenKeys: Dispatch<SetStateAction<Set<string>>>;
+}) {
+  if (keys.length === 0) return null;
+  const allHidden = keys.every((k) => hiddenKeys.has(k));
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          setHiddenKeys((prev) => {
+            const next = new Set(prev);
+            keys.forEach((key) => (allHidden ? next.delete(key) : next.add(key)));
+            return next;
+          })
+        }
+        className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
+          allHidden ? "opacity-40" : ""
+        }`}
+        title={`${label} 전체 ${allHidden ? "표시" : "숨김"}`}
+      >
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ backgroundColor: MOTOR_COLORS[motorKey] }}
+        />
+        {label} 전체
+      </button>
+      {keys.map((key, index) => {
+        const hidden = hiddenKeys.has(key);
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() =>
+              setHiddenKeys((prev) => {
+                const next = new Set(prev);
+                if (next.has(key)) next.delete(key);
+                else next.add(key);
+                return next;
+              })
+            }
+            className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
+              hidden ? "opacity-40" : ""
+            }`}
+            title={`${label} ${index + 1} ${hidden ? "표시" : "숨김"}`}
+          >
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ backgroundColor: MOTOR_COLORS[motorKey] }}
+            />
+            {label} {index + 1}
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
 export default function MotorTrendChart({
   logs,
   height = 260,
@@ -44,8 +113,6 @@ export default function MotorTrendChart({
   const ec02Keys = Array.from({ length: ec02SlotCount }, (_, i) => `e${i + 1}`);
   const ec03Keys = Array.from({ length: ec03SlotCount }, (_, i) => `i${i + 1}`);
 
-  if (blowerSlotCount === 0 && ec02SlotCount === 0 && ec03SlotCount === 0) return null;
-
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(
     () =>
       isMobile
@@ -56,6 +123,8 @@ export default function MotorTrendChart({
           ])
         : new Set()
   );
+
+  if (blowerSlotCount === 0 && ec02SlotCount === 0 && ec03SlotCount === 0) return null;
 
   const chartData = logs
     .map((log) => {
@@ -84,70 +153,6 @@ export default function MotorTrendChart({
     })
     .reverse();
 
-  const ToggleGroup = ({
-    keys,
-    motorKey,
-    label,
-  }: {
-    keys: string[];
-    motorKey: MotorKey;
-    label: string;
-  }) => {
-    if (keys.length === 0) return null;
-    const allHidden = keys.every((k) => hiddenKeys.has(k));
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() =>
-            setHiddenKeys((prev) => {
-              const next = new Set(prev);
-              keys.forEach((key) => (allHidden ? next.delete(key) : next.add(key)));
-              return next;
-            })
-          }
-          className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
-            allHidden ? "opacity-40" : ""
-          }`}
-          title={`${label} 전체 ${allHidden ? "표시" : "숨김"}`}
-        >
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: MOTOR_COLORS[motorKey] }}
-          />
-          {label} 전체
-        </button>
-        {keys.map((key, index) => {
-          const hidden = hiddenKeys.has(key);
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() =>
-                setHiddenKeys((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(key)) next.delete(key);
-                  else next.add(key);
-                  return next;
-                })
-              }
-              className={`inline-flex items-center gap-1 rounded border px-2 py-1 ${
-                hidden ? "opacity-40" : ""
-              }`}
-              title={`${label} ${index + 1} ${hidden ? "표시" : "숨김"}`}
-            >
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: MOTOR_COLORS[motorKey] }}
-              />
-              {label} {index + 1}
-            </button>
-          );
-        })}
-      </>
-    );
-  };
-
   const getLabel = (dataKey: string) => {
     if (dataKey.startsWith("b")) {
       return `${motorLabel("ec01")} ${dataKey.slice(1)}`;
@@ -166,9 +171,27 @@ export default function MotorTrendChart({
         </div>
       )}
       <div className="flex flex-wrap gap-2 text-xs mb-3">
-        <ToggleGroup keys={blowerKeys} motorKey="ec01" label={motorLabel("ec01")} />
-        <ToggleGroup keys={ec02Keys} motorKey="ec02" label={motorLabel("ec02")} />
-        <ToggleGroup keys={ec03Keys} motorKey="ec03" label={motorLabel("ec03")} />
+        <ToggleGroup
+          keys={blowerKeys}
+          motorKey="ec01"
+          label={motorLabel("ec01")}
+          hiddenKeys={hiddenKeys}
+          setHiddenKeys={setHiddenKeys}
+        />
+        <ToggleGroup
+          keys={ec02Keys}
+          motorKey="ec02"
+          label={motorLabel("ec02")}
+          hiddenKeys={hiddenKeys}
+          setHiddenKeys={setHiddenKeys}
+        />
+        <ToggleGroup
+          keys={ec03Keys}
+          motorKey="ec03"
+          label={motorLabel("ec03")}
+          hiddenKeys={hiddenKeys}
+          setHiddenKeys={setHiddenKeys}
+        />
       </div>
       <div className="w-full" style={{ height, minHeight: height }}>
         <ResponsiveContainer

@@ -19,6 +19,7 @@ interface SensorCardProps {
   values: number[];
   history?: number[]; // 스파크라인용 최근 값 배열
   showSparkline?: boolean;
+  onClick?: () => void;
 }
 
 export default function SensorCard({
@@ -26,6 +27,7 @@ export default function SensorCard({
   values,
   history = [],
   showSparkline = true,
+  onClick,
 }: SensorCardProps) {
   const unit = getSensorUnit(sensorKey);
   const thresholds = SENSOR_THRESHOLDS[sensorKey.toLowerCase()];
@@ -99,24 +101,23 @@ export default function SensorCard({
     return "#22c55e";
   };
 
-  // 임계값 존 표시용 백분율 계산
-  const getThresholdZone = () => {
-    if (!thresholds) return null;
-    
-    // 표시 범위 설정 (0 ~ danger * 1.2)
-    const displayMax = thresholds.danger * 1.3;
-    const warnPercent = (thresholds.warn / displayMax) * 100;
-    const dangerPercent = (thresholds.danger / displayMax) * 100;
-    const currentPercent = Math.min((currentMax / displayMax) * 100, 100);
-    
-    return { warnPercent, dangerPercent, currentPercent };
-  };
-
-  const thresholdZone = getThresholdZone();
-
   return (
     <div
-      className={`rounded-lg border p-3 transition-all ${stateColor.bg} ${stateColor.border}`}
+      className={`rounded-lg border p-3 transition-all ${stateColor.bg} ${stateColor.border} ${
+        onClick
+          ? "cursor-pointer hover:shadow-md hover:-translate-y-[1px] active:translate-y-0"
+          : ""
+      }`}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (!onClick) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       {/* Header: 센서 이름과 현재 값 */}
       <div className="flex items-center justify-between mb-2">
@@ -140,44 +141,6 @@ export default function SensorCard({
           </span>
         </div>
       </div>
-
-      {/* Threshold Zone Indicator */}
-      {thresholdZone && (
-        <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
-          {/* Normal zone */}
-          <div
-            className="absolute h-full bg-green-400 opacity-50"
-            style={{ width: `${thresholdZone.warnPercent}%` }}
-          />
-          {/* Warn zone */}
-          <div
-            className="absolute h-full bg-yellow-400 opacity-50"
-            style={{
-              left: `${thresholdZone.warnPercent}%`,
-              width: `${thresholdZone.dangerPercent - thresholdZone.warnPercent}%`,
-            }}
-          />
-          {/* Danger zone */}
-          <div
-            className="absolute h-full bg-red-400 opacity-50"
-            style={{
-              left: `${thresholdZone.dangerPercent}%`,
-              width: `${100 - thresholdZone.dangerPercent}%`,
-            }}
-          />
-          {/* Current value indicator */}
-          <div
-            className={`absolute h-full w-1 ${
-              currentMax >= thresholds!.danger
-                ? "bg-red-600"
-                : currentMax >= thresholds!.warn
-                ? "bg-yellow-600"
-                : "bg-green-600"
-            } transition-all`}
-            style={{ left: `${thresholdZone.currentPercent}%` }}
-          />
-        </div>
-      )}
 
       {/* Mini Sparkline */}
       {showSparkline && sparklineData && sparklineData.length >= 2 && (
@@ -221,24 +184,6 @@ export default function SensorCard({
               vectorEffect="non-scaling-stroke"
             />
           </svg>
-        </div>
-      )}
-
-      {/* Value array badges (if multiple sensors) */}
-      {values.length > 1 && (
-        <div className="flex flex-wrap gap-1 mt-2">
-          {values.map((val, idx) => {
-            const converted = convertSensorValue(sensorKey, val);
-            const itemColor = getStateColor(val);
-            return (
-              <span
-                key={idx}
-                className={`text-[10px] px-1.5 py-0.5 rounded ${itemColor.bg} ${itemColor.text} border ${itemColor.border}`}
-              >
-                #{idx + 1}: {converted.toFixed(1)}
-              </span>
-            );
-          })}
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import { motorLabel, getMotorUnit } from "@/lib/labels";
 import type { MotorsDTO, RoomState } from "@/types/dto";
 
@@ -223,10 +224,13 @@ function FloorLayer({
                   : "none",
               }}
             >
-              <img
+              <Image
                 src="/images/pig.png"
                 alt="돼지"
+                width={56}
+                height={56}
                 className="w-14 h-14 object-contain"
+                priority
               />
             </span>
           </div>
@@ -277,9 +281,11 @@ function FloorLayer({
                   : "none",
               }}
             >
-              <img
+              <Image
                 src="/images/pig.png"
                 alt="돼지"
+                width={64}
+                height={64}
                 className="w-16 h-16 object-contain"
               />
             </span>
