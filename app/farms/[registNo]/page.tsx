@@ -3,14 +3,13 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Filter, Inbox, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TopBar from "@/components/shell/TopBar";
 import StallTabs from "@/components/farms/StallTabs";
 import RoomGrid from "@/components/rooms/RoomGrid";
-import RoomDetailDrawer from "@/components/rooms/RoomDetailDrawer";
 import KpiCards from "@/components/farms/KpiCards";
 import AlertsPanel from "@/components/farms/AlertsPanel";
 import AlertsHistoryPanel from "@/components/farms/AlertsHistoryPanel";
@@ -19,7 +18,7 @@ import EmptyState from "@/components/common/EmptyState";
 import KpiCardsSkeleton from "@/components/skeletons/KpiCardsSkeleton";
 import RoomGridSkeleton from "@/components/skeletons/RoomGridSkeleton";
 import { Badge } from "@/components/ui/badge";
-import type { FarmDetailDTO, RoomSnapshotFullDTO } from "@/types/dto";
+import type { FarmDetailDTO } from "@/types/dto";
 import CriticalAlertBanner from "@/components/alerts/CriticalAlertBanner";
 import Breadcrumbs from "@/components/common/Breadcrumbs";
 
@@ -36,21 +35,11 @@ async function fetchFarmDetail(registNo: string): Promise<FarmDetailDTO> {
   return res.json();
 }
 
-async function fetchRoomFull(key12: string): Promise<RoomSnapshotFullDTO> {
-  const res = await fetch(`/api/rooms/${key12}`);
-  if (!res.ok) {
-    throw new Error("Failed to fetch room full");
-  }
-  return res.json();
-}
-
 export default function FarmDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const registNo = params.registNo as string;
   const [currentStall, setCurrentStall] = useState(1);
-  const [roomFull, setRoomFull] = useState<RoomSnapshotFullDTO | null>(null);
-  const [drawerError, setDrawerError] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   type StatusKey = "normal" | "warn" | "danger" | "offline";
   const [statusFilter, setStatusFilter] = useState<StatusKey[]>([]);
   const [denseRooms, setDenseRooms] = useState(false);
@@ -102,23 +91,8 @@ export default function FarmDetailPage() {
     }
   }, [data]);
 
-  const handleRoomClick = async (key12: string) => {
-    setDrawerOpen(true);
-    setDrawerError(null);
-    setRoomFull(null);
-    try {
-      const full = await fetchRoomFull(key12);
-      setRoomFull(full);
-    } catch (err) {
-      console.error("Failed to fetch room full:", err);
-      setDrawerError("방 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
-    }
-  };
-
-  const handleCloseDrawer = () => {
-    setDrawerOpen(false);
-    setRoomFull(null);
-    setDrawerError(null);
+  const handleRoomClick = (key12: string) => {
+    router.push(`/rooms/${key12}`);
   };
 
   if (isLoading) {
@@ -383,12 +357,6 @@ export default function FarmDetailPage() {
             />
           )}
         </div>
-        <RoomDetailDrawer
-          open={drawerOpen}
-          room={roomFull}
-          error={drawerError}
-          onClose={handleCloseDrawer}
-        />
       </main>
     </div>
   );
