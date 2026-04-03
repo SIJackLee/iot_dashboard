@@ -4,6 +4,7 @@
 
 import { useMemo } from "react";
 import { sensorLabel, convertSensorValue, getSensorUnit } from "@/lib/labels";
+import { Badge } from "@/components/ui/badge";
 import {
   DANGER_STROKE_HEX,
   getSensorMetricStyle,
@@ -48,7 +49,21 @@ export default function SensorCard({
   const identity = getSensorMetricStyle(sensorKey);
   const valueTextClass = getSensorValueTextClass(currentMax, thresholds);
   const isDanger = thresholds != null && currentMax >= thresholds.danger;
+  const isWarn = thresholds != null && currentMax >= thresholds.warn && !isDanger;
   const sparkStrokeHex = isDanger ? DANGER_STROKE_HEX : identity.hex;
+
+  const stateLabel = isDanger ? "위험" : isWarn ? "경고" : "정상";
+  const stateBadgeClass =
+    isDanger
+      ? "text-red-700 border-red-300 bg-red-50 text-[34px] leading-none"
+      : isWarn
+        ? "text-yellow-700 border-yellow-300 bg-yellow-50 text-[34px] leading-none"
+        : "text-green-700 border-green-300 bg-green-50 text-[34px] leading-none";
+
+  const sparkStrokeWidth = isDanger ? 2.5 : 1.5;
+  const sparkStrokeOpacity = isDanger ? 1 : isWarn ? 0.7 : 0.55;
+  const gradientTopOpacity = isDanger ? 0.3 : isWarn ? 0.18 : 0.12;
+  const gradientBottomOpacity = isDanger ? 0.09 : isWarn ? 0.04 : 0.02;
 
   // 트렌드 방향 계산
   const trendDirection = useMemo(() => {
@@ -111,31 +126,42 @@ export default function SensorCard({
     >
       {/* Header: 센서 이름과 현재 값 */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-gray-700">
-          {sensorLabel(sensorKey)}
-        </span>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="text-[34px] leading-none font-medium text-gray-700">
+            {sensorLabel(sensorKey)}
+          </span>
+          <Badge variant="outline" className={`${stateBadgeClass} px-2 py-0.5`}>
+            {stateLabel}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0 flex-none">
           {/* Trend Arrow */}
           {trendDirection !== "stable" && (
             <span
-              className={`text-xs ${
+              className={`text-[34px] leading-none ${
                 trendDirection === "up" ? "text-red-500" : "text-blue-500"
               }`}
             >
               {trendDirection === "up" ? "▲" : "▼"}
             </span>
           )}
-          <span className={`text-lg font-bold ${valueTextClass}`}>
-            {displayValue.toFixed(1)}
-            <span className="text-xs font-normal ml-0.5 text-gray-500">{unit}</span>
-          </span>
+          {displayValue != null ? (
+            <span className="inline-flex items-baseline gap-x-0.5">
+              <span className={`text-[44px] font-bold leading-none ${valueTextClass}`}>
+                {displayValue.toFixed(1)}
+              </span>
+              <span className="text-[28px] font-normal text-gray-500 leading-none">
+                {unit}
+              </span>
+            </span>
+          ) : null}
         </div>
       </div>
 
       {/* Mini Sparkline — fill은 지표 고유색, 위험 시 선·끝점만 빨강 */}
-      <div className="mt-auto min-h-12 flex-1 flex flex-col justify-end">
+      <div className="mt-auto min-h-24 flex-1 flex flex-col justify-end">
         {showSparkline && sparklineData && sparklineData.length >= 2 ? (
-          <div className="h-12 w-full">
+          <div className="h-24 w-full">
             <svg
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
@@ -143,8 +169,16 @@ export default function SensorCard({
             >
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={identity.hex} stopOpacity="0.3" />
-                  <stop offset="100%" stopColor={identity.hex} stopOpacity="0.05" />
+                  <stop
+                    offset="0%"
+                    stopColor={identity.hex}
+                    stopOpacity={gradientTopOpacity}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor={identity.hex}
+                    stopOpacity={gradientBottomOpacity}
+                  />
                 </linearGradient>
               </defs>
 
@@ -157,7 +191,8 @@ export default function SensorCard({
                 d={sparklinePath}
                 fill="none"
                 stroke={sparkStrokeHex}
-                strokeWidth="2"
+                strokeWidth={sparkStrokeWidth}
+                strokeOpacity={sparkStrokeOpacity}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
@@ -166,9 +201,10 @@ export default function SensorCard({
               <circle
                 cx={sparklineData[sparklineData.length - 1].x}
                 cy={sparklineData[sparklineData.length - 1].y}
-                r="3"
+                r={isDanger ? 3.5 : 3}
                 fill={sparkStrokeHex}
                 vectorEffect="non-scaling-stroke"
+                opacity={sparkStrokeOpacity}
               />
             </svg>
           </div>

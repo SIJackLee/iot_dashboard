@@ -169,58 +169,66 @@ export default function FarmDetailClient({ registNo }: { registNo: string }) {
           <h1 className="text-2xl font-bold">농장 상세: {registNo}</h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setStatusFilter(["normal", "warn", "danger", "offline"])}
-            className="min-h-[44px] touch-manipulation"
-          >
-            전체 선택
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setStatusFilter([])}
-            className="min-h-[44px] touch-manipulation"
-          >
-            전체 해제
-          </Button>
-          {statusMeta.map((s) => (
-            <Button
-              key={s.id}
-              size="sm"
-              variant={statusFilter.includes(s.id) ? "default" : "outline"}
-              onClick={() => handleStatusSelect(s.id)}
-              className="min-h-[44px] touch-manipulation"
-            >
-              {s.label} {s.count}
-            </Button>
-          ))}
-        </div>
+        {/* 상태 필터 + 축사 탭 통합 sticky 영역 */}
+        <div className="sticky top-0 z-20 -mx-4 px-4 py-2 mb-4 bg-gray-50/95 backdrop-blur border-b">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            {/* 좌측: 상태 제어부 + 선택된 상태 배지 */}
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setStatusFilter(["normal", "warn", "danger", "offline"])}
+                  className="min-h-[34px] h-auto px-3 py-1 touch-manipulation"
+                >
+                  전체 선택
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setStatusFilter([])}
+                  className="min-h-[34px] h-auto px-3 py-1 touch-manipulation"
+                >
+                  전체 해제
+                </Button>
+                {statusMeta.map((s) => (
+                  <Button
+                    key={s.id}
+                    size="sm"
+                    variant={statusFilter.includes(s.id) ? "default" : "outline"}
+                    onClick={() => handleStatusSelect(s.id)}
+                    className="min-h-[34px] h-auto px-3 py-1 touch-manipulation"
+                  >
+                    {s.label} {s.count > 0 ? s.count : ""}
+                  </Button>
+                ))}
+              </div>
 
-        {statusFilter.length > 0 && (
-          <div className="sticky top-0 z-20 -mx-4 px-4 py-2 mb-4 bg-gray-50/95 backdrop-blur border-b">
-            <div className="flex items-center gap-2">
-              {statusFilter.map((status) => (
-                <Badge key={status} variant="outline" className="flex items-center gap-1">
-                  <Filter className="h-3.5 w-3.5" />
-                  {statusLabel[status] ?? status}
-                </Badge>
-              ))}
-              <Button variant="ghost" size="sm" onClick={() => setStatusFilter([])}>
-                필터 해제
-              </Button>
+              {statusFilter.length > 0 && (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {statusFilter.map((status) => (
+                    <Badge key={status} variant="outline" className="flex items-center gap-1">
+                      <Filter className="h-3.5 w-3.5" />
+                      {statusLabel[status] ?? status}
+                    </Badge>
+                  ))}
+                  <Button variant="ghost" size="sm" onClick={() => setStatusFilter([])}>
+                    필터 해제
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* 우측: 축사 탭 */}
+            <div className="flex-shrink-0">
+              <StallTabs
+                stalls={data.stalls}
+                currentStall={effectiveStall}
+                onStallChange={setCurrentStall}
+              />
             </div>
           </div>
-        )}
-
-        <StallTabs
-          stalls={data.stalls}
-          currentStall={effectiveStall}
-          onStallChange={setCurrentStall}
-          sticky
-        />
+        </div>
 
         {currentStallData ? (
           (() => {

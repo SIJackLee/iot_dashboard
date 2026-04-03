@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { convertMotorValue, getMotorUnit, motorLabel } from "@/lib/labels";
+import { Badge } from "@/components/ui/badge";
 import { getMotorMetricStyle } from "@/lib/metricColors";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
@@ -35,6 +36,7 @@ export default function MotorCard({
   const displayValue = currentAvgRaw == null ? null : convertMotorValue(motorKey, currentAvgRaw);
 
   const running = (currentAvgRaw ?? 0) > 0;
+  const stateLabel = running ? "가동" : "정지";
 
   const tone = useMemo(() => {
     if (!running) {
@@ -53,6 +55,11 @@ export default function MotorCard({
       fillHex: id.hex,
     };
   }, [running, motorKey]);
+
+  const sparkStrokeWidth = running ? 1.5 : 1.2;
+  const sparkStrokeOpacity = running ? 0.55 : 0.38;
+  const gradientTopOpacity = running ? 0.28 : 0.18;
+  const gradientBottomOpacity = running ? 0.05 : 0.03;
 
   const trendDirection = useMemo(() => {
     const data = history.length > 0 ? history : [];
@@ -109,34 +116,60 @@ export default function MotorCard({
       }}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-gray-700">{motorLabel(motorKey)}</span>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="text-[34px] leading-none font-medium text-gray-700">
+            {motorLabel(motorKey)}
+          </span>
+          <Badge
+            variant="outline"
+            className={
+              running
+                ? "text-green-700 border-green-300 bg-green-50 text-[34px] leading-none px-2 py-0.5"
+                : "text-gray-700 border-gray-300 bg-gray-50 text-[34px] leading-none px-2 py-0.5"
+            }
+          >
+            {stateLabel}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-1.5 min-w-0 flex-none">
           {trendDirection !== "stable" && (
-            <span className={`text-xs ${trendDirection === "up" ? "text-red-500" : "text-blue-500"}`}>
+            <span
+              className={`text-[34px] leading-none ${
+                trendDirection === "up" ? "text-red-500" : "text-blue-500"
+              }`}
+            >
               {trendDirection === "up" ? "▲" : "▼"}
             </span>
           )}
-          <span className="text-lg font-bold tabular-nums text-gray-900">
-            {hasValue ? (
-              <>
+          {hasValue ? (
+            <span className="inline-flex items-baseline gap-x-0.5">
+              <span className="text-[44px] font-bold tabular-nums text-gray-900 leading-none">
                 {displayValue!.toFixed(0)}
-                <span className="text-xs font-normal ml-1 text-gray-500">{unit}</span>
-              </>
-            ) : (
-              <span className="text-sm font-medium text-gray-500">-</span>
-            )}
-          </span>
+              </span>
+              <span className="text-[28px] font-normal text-gray-500 leading-none">{unit}</span>
+            </span>
+          ) : (
+            <span className="text-[44px] font-medium text-gray-500 leading-none">-</span>
+          )}
         </div>
       </div>
 
-      <div className="mt-auto min-h-12 flex-1 flex flex-col justify-end">
+      <div className="mt-auto min-h-24 flex-1 flex flex-col justify-end">
         {hasHistory && sparklineData ? (
-          <div className="h-12 w-full">
+          <div className="h-24 w-full">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={tone.fillHex} stopOpacity="0.28" />
-                  <stop offset="100%" stopColor={tone.fillHex} stopOpacity="0.05" />
+                  <stop
+                    offset="0%"
+                    stopColor={tone.fillHex}
+                    stopOpacity={gradientTopOpacity}
+                  />
+                  <stop
+                    offset="100%"
+                    stopColor={tone.fillHex}
+                    stopOpacity={gradientBottomOpacity}
+                  />
                 </linearGradient>
               </defs>
               <path
@@ -147,7 +180,8 @@ export default function MotorCard({
                 d={sparklinePath}
                 fill="none"
                 stroke={tone.spark}
-                strokeWidth="2"
+                strokeWidth={sparkStrokeWidth}
+                strokeOpacity={sparkStrokeOpacity}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 vectorEffect="non-scaling-stroke"
@@ -155,14 +189,15 @@ export default function MotorCard({
               <circle
                 cx={sparklineData[sparklineData.length - 1].x}
                 cy={sparklineData[sparklineData.length - 1].y}
-                r="3"
+                r={running ? 3.2 : 2.6}
                 fill={tone.spark}
                 vectorEffect="non-scaling-stroke"
+                opacity={sparkStrokeOpacity}
               />
             </svg>
           </div>
         ) : (
-          <div className="text-xs text-gray-500 min-h-12 flex items-end">
+          <div className="text-xs text-gray-500 min-h-24 flex items-end">
             {showSparkline ? "추세 데이터 없음" : "추세 숨김"}
           </div>
         )}
