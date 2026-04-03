@@ -9,6 +9,7 @@ import PersistentAlertCounter from "@/components/common/PersistentAlertCounter";
 
 interface TopBarProps {
   summary?: ReactNode;
+  banner?: ReactNode;
   lastUpdatedAt?: string | null;
   isConnected?: boolean;
   pollingInterval?: number;
@@ -19,6 +20,7 @@ interface TopBarProps {
 
 export default function TopBar({
   summary,
+  banner,
   lastUpdatedAt,
   isConnected = true,
   pollingInterval = 3000,
@@ -29,7 +31,7 @@ export default function TopBar({
   return (
     <header className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           <Link
             href="/farms"
             className="hover:opacity-80 transition-opacity cursor-pointer"
@@ -37,13 +39,16 @@ export default function TopBar({
           >
             <h1 className="text-lg sm:text-xl font-bold text-gray-800">IoT Dashboard</h1>
           </Link>
-          {/* Live Indicator */}
           <LiveIndicator
             lastUpdatedAt={lastUpdatedAt}
             isConnected={isConnected}
             pollingInterval={pollingInterval}
           />
-          {/* Persistent Alert Counter */}
+          {banner && (
+            <div className="hidden lg:block min-w-0">
+              {banner}
+            </div>
+          )}
           <PersistentAlertCounter
             dangerCount={dangerCount}
             warnCount={warnCount}

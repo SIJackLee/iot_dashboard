@@ -6,7 +6,6 @@ import { memo } from "react";
 import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { FarmSummaryDTO } from "@/types/dto";
-import FreshnessBadge from "../common/FreshnessBadge";
 
 interface FarmSummaryTableProps {
   items: FarmSummaryDTO[];
@@ -20,8 +19,6 @@ interface FarmSummaryTableProps {
     warn: boolean;
     danger: boolean;
     offline: boolean;
-    freshness: boolean;
-    lastUpdated: boolean;
   };
 }
 
@@ -74,55 +71,67 @@ const FarmSummaryTable = memo(function FarmSummaryTable({
                 {renderSortIcon("registNo")}
               </div>
             </th>
-            {visibleColumns?.totalRooms !== false && (
-              <th
-                className={headerClassName("totalRooms")}
-                onClick={() => onSortChange?.("totalRooms")}
-              >
-                <div className="inline-flex items-center gap-1">
-                  총 방
-                  {renderSortIcon("totalRooms")}
-                </div>
-              </th>
-            )}
-            {visibleColumns?.normal !== false && <th className={headerClassName()}>정상</th>}
-            {visibleColumns?.warn !== false && <th className={headerClassName()}>경고</th>}
-            {visibleColumns?.danger !== false && (
-              <th
-                className={headerClassName("danger")}
-                onClick={() => onSortChange?.("danger")}
-              >
-                <div className="inline-flex items-center gap-1">
-                  위험
-                  {renderSortIcon("danger")}
-                </div>
-              </th>
-            )}
-            {visibleColumns?.offline !== false && (
-              <th
-                className={headerClassName("offline")}
-                onClick={() => onSortChange?.("offline")}
-              >
-                <div className="inline-flex items-center gap-1">
-                  오프라인
-                  {renderSortIcon("offline")}
-                </div>
-              </th>
-            )}
-            {visibleColumns?.freshness !== false && (
-              <th
-                className={headerClassName("freshness")}
-                onClick={() => onSortChange?.("freshness")}
-              >
-                <div className="inline-flex items-center gap-1">
-                  최신성
-                  {renderSortIcon("freshness")}
-                </div>
-              </th>
-            )}
-            {visibleColumns?.lastUpdated !== false && (
-              <th className={headerClassName()}>마지막 업데이트</th>
-            )}
+            <th className={headerClassName()}>
+              <div className="inline-flex items-center gap-3">
+                {visibleColumns?.danger !== false && (
+                  <span
+                    className="inline-flex items-center gap-1 cursor-pointer select-none"
+                    onClick={() => onSortChange?.("danger")}
+                    role={onSortChange ? "button" : undefined}
+                    tabIndex={onSortChange ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (!onSortChange) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onSortChange("danger");
+                      }
+                    }}
+                  >
+                    위험
+                    {renderSortIcon("danger")}
+                  </span>
+                )}
+                {visibleColumns?.offline !== false && (
+                  <span
+                    className="inline-flex items-center gap-1 cursor-pointer select-none"
+                    onClick={() => onSortChange?.("offline")}
+                    role={onSortChange ? "button" : undefined}
+                    tabIndex={onSortChange ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (!onSortChange) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onSortChange("offline");
+                      }
+                    }}
+                  >
+                    오프라인
+                    {renderSortIcon("offline")}
+                  </span>
+                )}
+                {visibleColumns?.warn !== false && <span>경고</span>}
+                {visibleColumns?.normal !== false && <span>정상</span>}
+                {visibleColumns?.totalRooms !== false && (
+                  <span
+                    className="inline-flex items-center gap-1 cursor-pointer select-none"
+                    onClick={() => onSortChange?.("totalRooms")}
+                    role={onSortChange ? "button" : undefined}
+                    tabIndex={onSortChange ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (!onSortChange) return;
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onSortChange("totalRooms");
+                      }
+                    }}
+                  >
+                    총 방
+                    {renderSortIcon("totalRooms")}
+                  </span>
+                )}
+              </div>
+            </th>
+            <th className={headerClassName()}> </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -156,58 +165,54 @@ const FarmSummaryTable = memo(function FarmSummaryTable({
                 }}
               >
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  <span className="inline-flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <span
                       className={
                         state === "normal"
                           ? "h-2 w-2 rounded-full bg-green-500"
                           : state === "warn"
-                          ? "h-2 w-2 rounded-full bg-yellow-500"
-                          : state === "danger"
-                          ? "h-2 w-2 rounded-full bg-red-500"
-                          : "h-2 w-2 rounded-full bg-gray-400"
+                            ? "h-2 w-2 rounded-full bg-yellow-500"
+                            : state === "danger"
+                              ? "h-2 w-2 rounded-full bg-red-500"
+                              : "h-2 w-2 rounded-full bg-gray-400"
                       }
                     />
-                    {item.registNo}
-                  </span>
+                    <div className="min-w-0">
+                      <div className="truncate">{item.registNo}</div>
+                      {visibleColumns?.totalRooms !== false && (
+                        <div className="text-xs text-muted-foreground font-normal">
+                          총 방 {item.totalRooms}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </td>
-                {visibleColumns?.totalRooms !== false && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.totalRooms}
-                  </td>
-                )}
-                {visibleColumns?.normal !== false && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                    {item.normal}
-                  </td>
-                )}
-                {visibleColumns?.warn !== false && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">
-                    {item.warn}
-                  </td>
-                )}
-                {visibleColumns?.danger !== false && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                    {item.danger}
-                  </td>
-                )}
-                {visibleColumns?.offline !== false && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {item.offline}
-                  </td>
-                )}
-                {visibleColumns?.freshness !== false && (
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <FreshnessBadge freshnessSec={item.freshnessSec} state={state} />
-                  </td>
-                )}
-                {visibleColumns?.lastUpdated !== false && (
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.lastUpdatedAtKst
-                      ? new Date(item.lastUpdatedAtKst).toLocaleString("ko-KR")
-                      : "N/A"}
-                  </td>
-                )}
+
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3 text-sm">
+                      {visibleColumns?.danger !== false && (
+                        <span className="text-red-700 font-semibold">
+                          위험 {item.danger}
+                        </span>
+                      )}
+                      {visibleColumns?.offline !== false && (
+                        <span className="text-gray-700 font-semibold">
+                          오프라인 {item.offline}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      {visibleColumns?.warn !== false && (
+                        <span className="text-yellow-700">경고 {item.warn}</span>
+                      )}
+                      {visibleColumns?.normal !== false && (
+                        <span className="text-green-700">정상 {item.normal}</span>
+                      )}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap" />
               </tr>
             );
           })}

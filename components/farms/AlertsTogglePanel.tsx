@@ -91,6 +91,20 @@ export default function AlertsTogglePanel({
   totalItems,
 }: AlertsTogglePanelProps) {
   const [view, setView] = useState<"history" | "current">(defaultView);
+  const [density, setDensity] = useState<"compact" | "detail">("compact");
+  const [showColumns, setShowColumns] = useState(false);
+
+  const effectiveVisibleColumns =
+    density === "compact" && visibleColumns
+      ? {
+          ...visibleColumns,
+          totalRooms: false,
+          normal: false,
+          warn: false,
+          danger: true,
+          offline: true,
+        }
+      : visibleColumns;
 
   return (
     <div className="mt-6 space-y-3">
@@ -155,21 +169,7 @@ export default function AlertsTogglePanel({
               />
             </div>
           )}
-          {visibleColumns && onToggleColumn && (
-            <div className="hidden sm:flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-              <span>컬럼 표시</span>
-              {Object.entries(visibleColumns).map(([key, value]) => (
-                <label key={key} className="inline-flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={value}
-                    onChange={() => onToggleColumn(key)}
-                  />
-                  {key}
-                </label>
-              ))}
-            </div>
-          )}
+          {/* PC 그리드 카드 전환으로 '표시 컬럼' UI는 숨김 */}
           {isEmpty ? (
             <EmptyState
               title={emptyStateTitle || "표시할 농장이 없습니다"}
@@ -193,6 +193,17 @@ export default function AlertsTogglePanel({
                           {startIndex + 1}-{endIndex} / {totalItems} 표시
                         </div>
                         <div className="flex items-center gap-2 justify-end sm:justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setDensity((prev) =>
+                                prev === "compact" ? "detail" : "compact"
+                              )
+                            }
+                          >
+                            {density === "compact" ? "상세 보기" : "간결 보기"}
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -227,21 +238,12 @@ export default function AlertsTogglePanel({
                     />
                   </div>
                   <div className="hidden sm:block">
-                    <FarmSummaryTable
+                    <FarmSummaryCards
                       items={farmItems}
-                      sortBy={sortBy}
-                      sortDir={sortDir}
-                      onSortChange={onSortChange}
+                      onSelect={onSelectFarm}
                       highlightRegistNos={highlightRegistNos}
-                      visibleColumns={visibleColumns as {
-                        totalRooms: boolean;
-                        normal: boolean;
-                        warn: boolean;
-                        danger: boolean;
-                        offline: boolean;
-                        freshness: boolean;
-                        lastUpdated: boolean;
-                      } | undefined}
+                      columns={5}
+                      density={density}
                     />
                   </div>
                 </>

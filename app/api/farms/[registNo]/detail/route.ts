@@ -15,6 +15,37 @@ type MappingSelectParams = {
   };
 };
 
+function countPresentSensorTypes(values: {
+  es01?: number[] | null;
+  es02?: number[] | null;
+  es03?: number[] | null;
+  es04?: number[] | null;
+  es09?: number[] | null;
+}): number {
+  const has = (arr: number[] | null | undefined) => Array.isArray(arr) && arr.length > 0;
+  let n = 0;
+  if (has(values.es01)) n++;
+  if (has(values.es02)) n++;
+  if (has(values.es03)) n++;
+  if (has(values.es04)) n++;
+  if (has(values.es09)) n++;
+  return n;
+}
+
+function countActiveMotorKeys(values: {
+  ec01?: number[] | null;
+  ec02?: number[] | null;
+  ec03?: number[] | null;
+}): number {
+  const hasValues = (arr: number[] | null | undefined) =>
+    Array.isArray(arr) && arr.some((v) => typeof v === "number" && !Number.isNaN(v));
+  let n = 0;
+  if (hasValues(values.ec01)) n++;
+  if (hasValues(values.ec02)) n++;
+  if (hasValues(values.ec03)) n++;
+  return n;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ registNo: string }> }
@@ -144,6 +175,18 @@ export async function GET(
           ventMode: mapping.vent_mode as "exhaust" | "intake",
           blowerCount: mapping.blower_count,
           ventCount: mapping.vent_count,
+          sensorTypeCount: countPresentSensorTypes({
+            es01: snapshot.es01,
+            es02: snapshot.es02,
+            es03: snapshot.es03,
+            es04: snapshot.es04,
+            es09: snapshot.es09,
+          }),
+          motorCount: countActiveMotorKeys({
+            ec01: snapshot.ec01,
+            ec02: snapshot.ec02,
+            ec03: snapshot.ec03,
+          }),
           measureTsKst: toKstIso(snapshot.measure_ts),
           updatedAtKst: toKstIso(snapshot.updated_at),
           freshnessSec,

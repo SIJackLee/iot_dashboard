@@ -7,11 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import FreshnessBadge from "../common/FreshnessBadge";
 import { cn } from "@/lib/utils";
-import {
-  roomLabel,
-  BLOWER_LABEL,
-  VENT_FAN_LABEL,
-} from "@/lib/labels";
+import { roomLabel } from "@/lib/labels";
 
 interface RoomCardProps {
   room: RoomSnapshotLiteDTO;
@@ -106,31 +102,31 @@ export default function RoomCard({
     >
       <CardContent className={dense ? "p-3" : "p-4"}>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+          <h4 className="font-semibold text-lg sm:text-xl leading-none text-gray-800 flex items-center gap-2">
             <span
               className={cn("h-2.5 w-2.5 rounded-full", getDotClassName(room.state))}
               aria-hidden="true"
             />
             {roomLabel(room.roomNo)}
-          </h3>
-          <Badge
-            variant={getBadgeVariant(room.state)}
-            className={cn(getBadgeClassName(room.state))}
-          >
-            {room.state.toUpperCase()}
-          </Badge>
+          </h4>
+          <div className="flex flex-col items-end gap-1">
+            <Badge
+              variant={getBadgeVariant(room.state)}
+              className={cn(getBadgeClassName(room.state))}
+            >
+              {room.state.toUpperCase()}
+            </Badge>
+            <FreshnessBadge freshnessSec={room.freshnessSec} state={room.state} />
+          </div>
         </div>
         {dense ? (
           <div className="text-sm text-gray-600">
-            <FreshnessBadge freshnessSec={room.freshnessSec} state={room.state} />
+            센서 {room.sensorTypeCount}, 모터 {room.motorCount}
           </div>
         ) : (
           <div className="text-sm text-gray-600 space-y-1">
             <div>
-              {BLOWER_LABEL}: {room.blowerCount}, {VENT_FAN_LABEL}: {room.ventCount}
-            </div>
-            <div className="mt-2">
-              <FreshnessBadge freshnessSec={room.freshnessSec} state={room.state} />
+              센서 {room.sensorTypeCount}, 모터 {room.motorCount}
             </div>
           </div>
         )}

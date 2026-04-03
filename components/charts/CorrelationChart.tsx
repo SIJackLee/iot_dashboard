@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { sensorLabel, convertSensorValue } from "@/lib/labels";
+import { getSensorMetricStyle } from "@/lib/metricColors";
 import type { SensorsDTO } from "@/types/dto";
 
 interface CorrelationChartProps {
@@ -27,6 +28,7 @@ export default function CorrelationChart({
   sensorX,
   sensorY,
 }: CorrelationChartProps) {
+  const scatterFill = getSensorMetricStyle(sensorY).hex;
   // 센서 데이터 추출 및 변환
   const getSensorValues = (key: string): number[] => {
     const values = sensors[key as keyof SensorsDTO] as number[];
@@ -141,9 +143,9 @@ export default function CorrelationChart({
                   return null;
                 }}
               />
-              <Scatter data={scatterData} fill="#8884d8">
+              <Scatter data={scatterData} fill={scatterFill}>
                 {scatterData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill="#8884d8" />
+                  <Cell key={`cell-${index}`} fill={scatterFill} />
                 ))}
               </Scatter>
             </ScatterChart>

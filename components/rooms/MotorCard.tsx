@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { convertMotorValue, getMotorUnit, motorLabel } from "@/lib/labels";
+import { getMotorMetricStyle } from "@/lib/metricColors";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
 
@@ -33,39 +34,25 @@ export default function MotorCard({
   const currentAvgRaw = useMemo(() => avg(values), [values]);
   const displayValue = currentAvgRaw == null ? null : convertMotorValue(motorKey, currentAvgRaw);
 
+  const running = (currentAvgRaw ?? 0) > 0;
+
   const tone = useMemo(() => {
-    const running = (currentAvgRaw ?? 0) > 0;
     if (!running) {
       return {
         bg: "bg-gray-50",
         border: "border-gray-200",
-        text: "text-gray-700",
         spark: "#6b7280",
+        fillHex: "#6b7280",
       };
     }
-    if (motorKey === "ec01") {
-      return {
-        bg: "bg-blue-50",
-        border: "border-blue-200",
-        text: "text-blue-700",
-        spark: "#3b82f6",
-      };
-    }
-    if (motorKey === "ec02") {
-      return {
-        bg: "bg-amber-50",
-        border: "border-amber-200",
-        text: "text-amber-700",
-        spark: "#f59e0b",
-      };
-    }
+    const id = getMotorMetricStyle(motorKey);
     return {
-      bg: "bg-green-50",
-      border: "border-green-200",
-      text: "text-green-700",
-      spark: "#22c55e",
+      bg: id.bg,
+      border: id.border,
+      spark: id.hex,
+      fillHex: id.hex,
     };
-  }, [currentAvgRaw, motorKey]);
+  }, [running, motorKey]);
 
   const trendDirection = useMemo(() => {
     const data = history.length > 0 ? history : [];
@@ -101,9 +88,11 @@ export default function MotorCard({
   const hasValue = displayValue != null;
   const hasHistory = Boolean(showSparkline && sparklineData && sparklineData.length >= 2);
 
+  const gradientId = `motor-grad-${motorKey}`;
+
   return (
     <div
-      className={`rounded-lg border p-3 shadow-sm transition-all ${tone.bg} ${tone.border} ${
+      className={`rounded-lg border p-3 shadow-sm transition-all min-h-[7.25rem] flex flex-col ${tone.bg} ${tone.border} ${
         onClick
           ? "cursor-pointer hover:shadow-md hover:-translate-y-[1px] active:translate-y-0"
           : ""
@@ -127,7 +116,7 @@ export default function MotorCard({
               {trendDirection === "up" ? "▲" : "▼"}
             </span>
           )}
-          <span className={`text-lg font-bold tabular-nums ${tone.text}`}>
+          <span className="text-lg font-bold tabular-nums text-gray-900">
             {hasValue ? (
               <>
                 {displayValue!.toFixed(0)}
@@ -140,28 +129,44 @@ export default function MotorCard({
         </div>
       </div>
 
-      {hasHistory && (
-        <div className="h-12 w-full">
-          <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
-            <path
-              d={sparklinePath}
-              fill="none"
-              stroke={tone.spark}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-        </div>
-      )}
-
-      {!hasHistory && (
-        <div className="text-xs text-gray-500">
-          {showSparkline ? "추세 데이터 없음" : "추세 숨김"}
-        </div>
-      )}
+      <div className="mt-auto min-h-12 flex-1 flex flex-col justify-end">
+        {hasHistory && sparklineData ? (
+          <div className="h-12 w-full">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={tone.fillHex} stopOpacity="0.28" />
+                  <stop offset="100%" stopColor={tone.fillHex} stopOpacity="0.05" />
+                </linearGradient>
+              </defs>
+              <path
+                d={`${sparklinePath} L 100 100 L 0 100 Z`}
+                fill={`url(#${gradientId})`}
+              />
+              <path
+                d={sparklinePath}
+                fill="none"
+                stroke={tone.spark}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+              <circle
+                cx={sparklineData[sparklineData.length - 1].x}
+                cy={sparklineData[sparklineData.length - 1].y}
+                r="3"
+                fill={tone.spark}
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          </div>
+        ) : (
+          <div className="text-xs text-gray-500 min-h-12 flex items-end">
+            {showSparkline ? "추세 데이터 없음" : "추세 숨김"}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-

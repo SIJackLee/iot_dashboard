@@ -7,23 +7,18 @@ import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { RoomLogPointDTO } from "@/types/dto";
 import { convertMotorValue, getMotorUnit, motorLabel } from "@/lib/labels";
+import { getMotorChartHex, type MotorMetricKey } from "@/lib/metricColors";
 
 const MAX_BLOWER = 4;
 const MAX_VENT = 6;
 
-type MotorKey = "ec01" | "ec02" | "ec03";
+type MotorKey = MotorMetricKey;
 
 interface MotorTrendChartProps {
   logs: RoomLogPointDTO[];
   height?: number;
   showTitle?: boolean;
 }
-
-const MOTOR_COLORS: Record<MotorKey, string> = {
-  ec01: "#ff7300",
-  ec02: "#60a5fa",
-  ec03: "#34d399",
-};
 
 function ToggleGroup({
   keys,
@@ -58,7 +53,7 @@ function ToggleGroup({
       >
         <span
           className="h-2 w-2 rounded-full"
-          style={{ backgroundColor: MOTOR_COLORS[motorKey] }}
+          style={{ backgroundColor: getMotorChartHex(motorKey) }}
         />
         {label} 전체
       </button>
@@ -83,7 +78,7 @@ function ToggleGroup({
           >
             <span
               className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: MOTOR_COLORS[motorKey] }}
+              style={{ backgroundColor: getMotorChartHex(motorKey) }}
             />
             {label} {index + 1}
           </button>
@@ -217,7 +212,7 @@ export default function MotorTrendChart({
                   key={key}
                   type="monotone"
                   dataKey={key}
-                  stroke={MOTOR_COLORS.ec01}
+                  stroke={getMotorChartHex("ec01")}
                   strokeOpacity={1 - index * 0.15}
                   dot={false}
                   isAnimationActive={false}
@@ -230,7 +225,7 @@ export default function MotorTrendChart({
                   key={key}
                   type="monotone"
                   dataKey={key}
-                  stroke={MOTOR_COLORS.ec02}
+                  stroke={getMotorChartHex("ec02")}
                   strokeOpacity={1 - index * 0.12}
                   dot={false}
                   isAnimationActive={false}
@@ -243,7 +238,7 @@ export default function MotorTrendChart({
                   key={key}
                   type="monotone"
                   dataKey={key}
-                  stroke={MOTOR_COLORS.ec03}
+                  stroke={getMotorChartHex("ec03")}
                   strokeOpacity={1 - index * 0.12}
                   dot={false}
                   isAnimationActive={false}

@@ -67,6 +67,7 @@ export async function GET(request: Request) {
     const range = url.searchParams.get("range") || "6h";
     const limitParam = url.searchParams.get("limit");
     const statesParam = url.searchParams.get("states") || "warn,danger,offline";
+    const registNoParam = url.searchParams.get("registNo");
 
     const rangeMin = RANGE_TO_MIN[range] ?? RANGE_TO_MIN["6h"];
     const limit = Math.min(Math.max(parseInt(limitParam || "50", 10), 1), 200);
@@ -110,7 +111,9 @@ export async function GET(request: Request) {
         select: "key12,isind_regist_no,stall_no,room_no",
         in: { key12: group },
       });
-      mappingRows.push(...rows);
+      mappingRows.push(
+        ...rows.filter((r) => !registNoParam || r.isind_regist_no === registNoParam)
+      );
     }
 
     const mappingMap = new Map(mappingRows.map((m) => [m.key12, m]));

@@ -51,6 +51,8 @@ export interface RoomSnapshotLiteDTO {
   ventMode: VentMode;
   blowerCount: number;
   ventCount: number;
+  sensorTypeCount: number;
+  motorCount: number;
   measureTsKst: ISODateTimeKst;
   updatedAtKst: ISODateTimeKst;
   freshnessSec: number;

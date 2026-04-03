@@ -2,17 +2,8 @@
 
 "use client";
 
-import dynamic from "next/dynamic";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { FarmSummaryDTO } from "@/types/dto";
-
-interface PieItem {
-  id?: string;
-  name: string;
-  value: number;
-  color: string;
-}
 
 interface FarmOverviewHeaderProps {
   lastUpdatedAtKst: string | null;
@@ -21,22 +12,7 @@ interface FarmOverviewHeaderProps {
   normalRate: number;
   offlineRate: number;
   farmCount: number;
-  statusPieData: PieItem[];
-  statusFilter: string[];
-  onStatusSelect: (id: string) => void;
-  farms?: FarmSummaryDTO[];
-  onFarmClick?: (registNo: string) => void;
 }
-
-const StatusPieChart = dynamic(() => import("@/components/charts/StatusPieChart"), {
-  ssr: false,
-  loading: () => <div className="h-[260px] min-h-[260px] w-full" />,
-});
-
-const FarmHeatmap = dynamic(() => import("@/components/charts/FarmHeatmap"), {
-  ssr: false,
-  loading: () => <div className="h-[400px] w-full" />,
-});
 
 export default function FarmOverviewHeader({
   lastUpdatedAtKst,
@@ -45,28 +21,11 @@ export default function FarmOverviewHeader({
   normalRate,
   offlineRate,
   farmCount,
-  statusPieData,
-  statusFilter,
-  onStatusSelect,
-  farms,
-  onFarmClick,
 }: FarmOverviewHeaderProps) {
   const formatRate = (value: number) => `${value.toFixed(1)}%`;
-  
-  // 위험/오프라인 수 계산
-  const totalDanger = statusPieData.find((d) => d.id === "danger")?.value || 0;
-  const totalOffline = statusPieData.find((d) => d.id === "offline")?.value || 0;
 
   return (
     <div className="space-y-3 sm:space-y-4 mb-4 sm:mb-6">
-      <div className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-white/95 backdrop-blur border-b">
-        <div className="text-xs text-muted-foreground">
-          마지막 갱신:{" "}
-          {lastUpdatedAtKst
-            ? new Date(lastUpdatedAtKst).toLocaleString("ko-KR")
-            : "N/A"}
-        </div>
-      </div>
       <h1 className="text-xl sm:text-2xl font-bold">{title}</h1>
       
       {/* 모바일: 핵심 정보만 (정상률, 위험/오프라인 수) */}
@@ -80,11 +39,9 @@ export default function FarmOverviewHeader({
             </div>
           </div>
           <div className="flex flex-col">
-            <div className="text-muted-foreground text-xs text-left mb-1">위험/오프라인</div>
+            <div className="text-muted-foreground text-xs text-left mb-1">오프라인율</div>
             <div className="text-base font-semibold text-right">
-              <span className="text-red-600">{totalDanger}</span>
-              <span className="text-gray-600 mx-1">/</span>
-              <span className="text-gray-600">{totalOffline}</span>
+              <span className="text-gray-600">{formatRate(offlineRate)}</span>
             </div>
           </div>
         </div>
@@ -116,43 +73,6 @@ export default function FarmOverviewHeader({
           </div>
         </div>
       </Card>
-      
-      {/* 도넛 차트와 히트맵: PC에서만 표시, 탭으로 토글 */}
-      <div className="hidden sm:block">
-        {farms ? (
-          <Tabs defaultValue="pie" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="pie" className="text-sm sm:text-base">
-                상태 분포
-              </TabsTrigger>
-              <TabsTrigger value="heatmap" className="text-sm sm:text-base">
-                농장 상태 히트맵
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="pie" className="mt-0">
-              <StatusPieChart
-                title="상태 분포"
-                data={statusPieData}
-                selectedIds={statusFilter}
-                onSelect={onStatusSelect}
-              />
-            </TabsContent>
-            <TabsContent value="heatmap" className="mt-0">
-              <FarmHeatmap
-                farms={farms}
-                onFarmClick={onFarmClick}
-              />
-            </TabsContent>
-          </Tabs>
-        ) : (
-          <StatusPieChart
-            title="상태 분포"
-            data={statusPieData}
-            selectedIds={statusFilter}
-            onSelect={onStatusSelect}
-          />
-        )}
-      </div>
     </div>
   );
 }

@@ -74,7 +74,7 @@ export default function SensorCardGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+    <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(320px,1fr))]">
       {sortedSensors.map((key) => (
         <SensorCard
           key={key}

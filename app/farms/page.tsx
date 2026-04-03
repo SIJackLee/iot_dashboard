@@ -4,7 +4,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Inbox, SearchX } from "lucide-react";
 import dynamic from "next/dynamic";
 import EmptyState from "@/components/common/EmptyState";
@@ -94,8 +94,6 @@ export default function FarmsPage() {
     warn: true,
     danger: true,
     offline: true,
-    freshness: true,
-    lastUpdated: true,
   });
 
   // 초기 로드 시 전체 FARM 조회
@@ -230,7 +228,7 @@ export default function FarmsPage() {
     ? filteredItems.length 
     : (totalFarmCount ?? filteredItems.length);
   
-  const pageSize = 10;
+  const pageSize = 30;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const currentPage = Math.min(page, totalPages);
   const startIndex = (currentPage - 1) * pageSize;
@@ -421,6 +419,16 @@ export default function FarmsPage() {
         pollingInterval={15000}
         dangerCount={totalDanger}
         warnCount={totalWarn}
+        banner={
+          showDeferred ? (
+            <OfflineBanner
+              lastUpdatedAtKst={lastUpdatedAtKst}
+              totalOffline={totalOffline}
+              totalRooms={totalRooms}
+              compact
+            />
+          ) : null
+        }
       />
       <PullToRefresh
         onRefresh={async () => {
@@ -436,11 +444,6 @@ export default function FarmsPage() {
             normalRate={normalRate}
             offlineRate={offlineRate}
             farmCount={data?.totalCount ?? baseItems.length}
-            statusPieData={statusPieData}
-            statusFilter={statusFilter}
-            onStatusSelect={(id) => handleStatusSelect(id as StatusKey)}
-            farms={data.items}
-            onFarmClick={(registNo) => router.push(`/farms/${registNo}`)}
           />
         )}
         
@@ -462,13 +465,6 @@ export default function FarmsPage() {
         )}
         
         <div className="mt-6 space-y-4">
-          {showDeferred && (
-            <OfflineBanner
-              lastUpdatedAtKst={lastUpdatedAtKst}
-              totalOffline={totalOffline}
-              totalRooms={totalRooms}
-            />
-          )}
           {showAlertsPanel && (
             <AlertsTogglePanel
             registNo={undefined}

@@ -6,8 +6,9 @@ import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { RoomLogPointDTO } from "@/types/dto";
 import { convertSensorValue, getSensorUnit, sensorLabel } from "@/lib/labels";
+import { getSensorChartHex, type SensorMetricKey } from "@/lib/metricColors";
 
-type SensorKey = "es01" | "es02" | "es03" | "es04" | "es09";
+type SensorKey = SensorMetricKey;
 
 const MAX_SLOTS = 6;
 
@@ -18,14 +19,6 @@ interface SensorTrendChartProps {
   showTitle?: boolean;
 }
 
-const SENSOR_COLORS: Record<SensorKey, string> = {
-  es01: "#8884d8",
-  es02: "#82ca9d",
-  es03: "#ffc658",
-  es04: "#ef4444",
-  es09: "#60a5fa",
-};
-
 export default function SensorTrendChart({
   logs,
   sensorKey,
@@ -33,7 +26,7 @@ export default function SensorTrendChart({
   showTitle = true,
 }: SensorTrendChartProps) {
   const unit = getSensorUnit(sensorKey);
-  const color = SENSOR_COLORS[sensorKey];
+  const color = getSensorChartHex(sensorKey);
   const isMobile = typeof window !== "undefined"
     && window.matchMedia("(max-width: 639px)").matches;
 

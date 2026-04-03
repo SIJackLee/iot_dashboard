@@ -4,6 +4,11 @@
 
 import { useMemo } from "react";
 import { sensorLabel, convertSensorValue, getSensorUnit } from "@/lib/labels";
+import {
+  DANGER_STROKE_HEX,
+  getSensorMetricStyle,
+  getSensorValueTextClass,
+} from "@/lib/metricColors";
 
 // 센서별 임계값 (stateRules.ts와 동일)
 const SENSOR_THRESHOLDS: Record<string, { warn: number; danger: number }> = {
@@ -40,19 +45,10 @@ export default function SensorCard({
 
   const displayValue = convertSensorValue(sensorKey, currentMax);
 
-  // 상태 색상 결정
-  const getStateColor = (rawValue: number) => {
-    if (!thresholds) return { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-200" };
-    if (rawValue >= thresholds.danger) {
-      return { bg: "bg-red-50", text: "text-red-700", border: "border-red-300" };
-    }
-    if (rawValue >= thresholds.warn) {
-      return { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-300" };
-    }
-    return { bg: "bg-green-50", text: "text-green-700", border: "border-green-300" };
-  };
-
-  const stateColor = getStateColor(currentMax);
+  const identity = getSensorMetricStyle(sensorKey);
+  const valueTextClass = getSensorValueTextClass(currentMax, thresholds);
+  const isDanger = thresholds != null && currentMax >= thresholds.danger;
+  const sparkStrokeHex = isDanger ? DANGER_STROKE_HEX : identity.hex;
 
   // 트렌드 방향 계산
   const trendDirection = useMemo(() => {
@@ -93,17 +89,11 @@ export default function SensorCard({
       .join(" ");
   }, [sparklineData]);
 
-  // 스파크라인 색상
-  const getSparklineColor = () => {
-    if (!thresholds) return "#6b7280";
-    if (currentMax >= thresholds.danger) return "#ef4444";
-    if (currentMax >= thresholds.warn) return "#eab308";
-    return "#22c55e";
-  };
+  const gradientId = `sensor-grad-${sensorKey.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   return (
     <div
-      className={`rounded-lg border p-3 transition-all ${stateColor.bg} ${stateColor.border} ${
+      className={`rounded-lg border p-3 transition-all min-h-[7.25rem] flex flex-col ${identity.bg} ${identity.border} ${
         onClick
           ? "cursor-pointer hover:shadow-md hover:-translate-y-[1px] active:translate-y-0"
           : ""
@@ -135,57 +125,55 @@ export default function SensorCard({
               {trendDirection === "up" ? "▲" : "▼"}
             </span>
           )}
-          <span className={`text-lg font-bold ${stateColor.text}`}>
+          <span className={`text-lg font-bold ${valueTextClass}`}>
             {displayValue.toFixed(1)}
-            <span className="text-xs font-normal ml-0.5">{unit}</span>
+            <span className="text-xs font-normal ml-0.5 text-gray-500">{unit}</span>
           </span>
         </div>
       </div>
 
-      {/* Mini Sparkline */}
-      {showSparkline && sparklineData && sparklineData.length >= 2 && (
-        <div className="h-12 w-full">
-          <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            className="w-full h-full"
-          >
-            {/* Gradient fill under the line */}
-            <defs>
-              <linearGradient id={`gradient-${sensorKey}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={getSparklineColor()} stopOpacity="0.3" />
-                <stop offset="100%" stopColor={getSparklineColor()} stopOpacity="0.05" />
-              </linearGradient>
-            </defs>
-            
-            {/* Area fill */}
-            <path
-              d={`${sparklinePath} L 100 100 L 0 100 Z`}
-              fill={`url(#gradient-${sensorKey})`}
-            />
-            
-            {/* Line */}
-            <path
-              d={sparklinePath}
-              fill="none"
-              stroke={getSparklineColor()}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-            />
-            
-            {/* Current point */}
-            <circle
-              cx={sparklineData[sparklineData.length - 1].x}
-              cy={sparklineData[sparklineData.length - 1].y}
-              r="3"
-              fill={getSparklineColor()}
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-        </div>
-      )}
+      {/* Mini Sparkline — fill은 지표 고유색, 위험 시 선·끝점만 빨강 */}
+      <div className="mt-auto min-h-12 flex-1 flex flex-col justify-end">
+        {showSparkline && sparklineData && sparklineData.length >= 2 ? (
+          <div className="h-12 w-full">
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              className="w-full h-full"
+            >
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={identity.hex} stopOpacity="0.3" />
+                  <stop offset="100%" stopColor={identity.hex} stopOpacity="0.05" />
+                </linearGradient>
+              </defs>
+
+              <path
+                d={`${sparklinePath} L 100 100 L 0 100 Z`}
+                fill={`url(#${gradientId})`}
+              />
+
+              <path
+                d={sparklinePath}
+                fill="none"
+                stroke={sparkStrokeHex}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+
+              <circle
+                cx={sparklineData[sparklineData.length - 1].x}
+                cy={sparklineData[sparklineData.length - 1].y}
+                r="3"
+                fill={sparkStrokeHex}
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -12,8 +12,9 @@ import {
 } from "recharts";
 import type { RoomLogPointDTO } from "@/types/dto";
 import { convertMotorValue, getMotorUnit, motorLabel } from "@/lib/labels";
+import { getMotorChartHex, type MotorMetricKey } from "@/lib/metricColors";
 
-type MotorKey = "ec01" | "ec02" | "ec03";
+type MotorKey = MotorMetricKey;
 
 const MAX_SLOTS = 6;
 
@@ -24,12 +25,6 @@ interface MotorSingleTrendChartProps {
   showTitle?: boolean;
 }
 
-const MOTOR_COLORS: Record<MotorKey, string> = {
-  ec01: "#3b82f6",
-  ec02: "#f59e0b",
-  ec03: "#22c55e",
-};
-
 export default function MotorSingleTrendChart({
   logs,
   motorKey,
@@ -37,7 +32,7 @@ export default function MotorSingleTrendChart({
   showTitle = true,
 }: MotorSingleTrendChartProps) {
   const unit = getMotorUnit(motorKey);
-  const color = MOTOR_COLORS[motorKey];
+  const color = getMotorChartHex(motorKey);
   const isMobile =
     typeof window !== "undefined" &&
     window.matchMedia("(max-width: 639px)").matches;

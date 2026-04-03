@@ -6,6 +6,7 @@ import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import type { RoomLogPointDTO } from "@/types/dto";
 import { convertMotorValue, convertSensorValue, getMotorUnit, getSensorUnit, motorLabel, sensorLabel } from "@/lib/labels";
+import { getMotorChartHex, getSensorChartHex } from "@/lib/metricColors";
 
 interface RoomTrendChartProps {
   logs: RoomLogPointDTO[];
@@ -62,10 +63,10 @@ export default function RoomTrendChart({
       {showTitle && <h3 className="font-semibold mb-4">트렌드 차트</h3>}
       <div className="flex flex-wrap gap-2 text-xs mb-3">
         {[
-          { key: "ES01" as const, label: sensorLabel("es01"), color: "#8884d8" },
-          { key: "ES02" as const, label: sensorLabel("es02"), color: "#82ca9d" },
-          { key: "ES03" as const, label: sensorLabel("es03"), color: "#ffc658" },
-          { key: "EC01" as const, label: motorLabel("ec01"), color: "#ff7300" },
+          { key: "ES01" as const, label: sensorLabel("es01"), color: getSensorChartHex("es01") },
+          { key: "ES02" as const, label: sensorLabel("es02"), color: getSensorChartHex("es02") },
+          { key: "ES03" as const, label: sensorLabel("es03"), color: getSensorChartHex("es03") },
+          { key: "EC01" as const, label: motorLabel("ec01"), color: getMotorChartHex("ec01") },
         ]
           .filter((item) => visibleSeries.includes(item.key))
           .map((item) => {
@@ -116,16 +117,16 @@ export default function RoomTrendChart({
               }}
             />
             {visibleSeries.includes("ES01") && !hiddenKeys.has("ES01") && (
-              <Line type="monotone" dataKey="ES01" stroke="#8884d8" />
+              <Line type="monotone" dataKey="ES01" stroke={getSensorChartHex("es01")} />
             )}
             {visibleSeries.includes("ES02") && !hiddenKeys.has("ES02") && (
-              <Line type="monotone" dataKey="ES02" stroke="#82ca9d" />
+              <Line type="monotone" dataKey="ES02" stroke={getSensorChartHex("es02")} />
             )}
             {visibleSeries.includes("ES03") && !hiddenKeys.has("ES03") && (
-              <Line type="monotone" dataKey="ES03" stroke="#ffc658" />
+              <Line type="monotone" dataKey="ES03" stroke={getSensorChartHex("es03")} />
             )}
             {visibleSeries.includes("EC01") && !hiddenKeys.has("EC01") && (
-              <Line type="monotone" dataKey="EC01" stroke="#ff7300" />
+              <Line type="monotone" dataKey="EC01" stroke={getMotorChartHex("ec01")} />
             )}
           </LineChart>
         </ResponsiveContainer>
