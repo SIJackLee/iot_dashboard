@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { sensorLabel, convertSensorValue, getSensorUnit } from "@/lib/labels";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,6 +35,9 @@ export default function SensorCard({
   showSparkline = true,
   onClick,
 }: SensorCardProps) {
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [headerScale, setHeaderScale] = useState(1);
+
   const unit = getSensorUnit(sensorKey);
   const thresholds = SENSOR_THRESHOLDS[sensorKey.toLowerCase()];
 
@@ -64,6 +67,31 @@ export default function SensorCard({
   const sparkStrokeOpacity = isDanger ? 1 : isWarn ? 0.7 : 0.55;
   const gradientTopOpacity = isDanger ? 0.3 : isWarn ? 0.18 : 0.12;
   const gradientBottomOpacity = isDanger ? 0.09 : isWarn ? 0.04 : 0.02;
+
+  // 헤더 글자 크기 자동 축소(가로 폭이 줄면 줄바꿈 대신 폰트 사이즈를 줄임)
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+
+    const baseValuePx = 44;
+    const minValuePx = 28;
+    const minScale = minValuePx / baseValuePx;
+    const targetWidth = 420; // 데스크탑 기준(필요 시 380/320로 조정)
+
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width ?? 0;
+      if (w <= 0) return;
+      const next = Math.max(minScale, Math.min(1, w / targetWidth));
+      setHeaderScale(next);
+    });
+
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const labelPx = 34 * headerScale;
+  const valuePx = 44 * headerScale;
+  const unitPx = 28 * headerScale;
 
   // 트렌드 방향 계산
   const trendDirection = useMemo(() => {
@@ -123,34 +151,49 @@ export default function SensorCard({
           onClick();
         }
       }}
+      ref={cardRef}
     >
       {/* Header: 센서 이름과 현재 값 */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-1 min-w-0">
-          <span className="text-[34px] leading-none font-medium text-gray-700">
+      <div className="flex items-center justify-between mb-2 flex-nowrap whitespace-nowrap">
+        <div className="flex items-center gap-1 min-w-0 whitespace-nowrap">
+          <span
+            className="text-[34px] leading-none font-medium text-gray-700 whitespace-nowrap"
+            style={{ fontSize: labelPx }}
+          >
             {sensorLabel(sensorKey)}
           </span>
-          <Badge variant="outline" className={`${stateBadgeClass} px-2 py-0.5`}>
+          <Badge
+            variant="outline"
+            className={`${stateBadgeClass} px-2 py-0.5 whitespace-nowrap`}
+            style={{ fontSize: labelPx }}
+          >
             {stateLabel}
           </Badge>
         </div>
-        <div className="flex items-center gap-1.5 min-w-0 flex-none">
+        <div className="flex items-center gap-1.5 min-w-0 flex-none whitespace-nowrap">
           {/* Trend Arrow */}
           {trendDirection !== "stable" && (
             <span
-              className={`text-[34px] leading-none ${
+              className={`text-[34px] leading-none whitespace-nowrap ${
                 trendDirection === "up" ? "text-red-500" : "text-blue-500"
               }`}
+              style={{ fontSize: labelPx }}
             >
               {trendDirection === "up" ? "▲" : "▼"}
             </span>
           )}
           {displayValue != null ? (
-            <span className="inline-flex items-baseline gap-x-0.5">
-              <span className={`text-[44px] font-bold leading-none ${valueTextClass}`}>
+            <span className="inline-flex items-baseline gap-x-0.5 whitespace-nowrap">
+              <span
+                className={`text-[44px] font-bold leading-none ${valueTextClass} whitespace-nowrap`}
+                style={{ fontSize: valuePx }}
+              >
                 {displayValue.toFixed(1)}
               </span>
-              <span className="text-[28px] font-normal text-gray-500 leading-none">
+              <span
+                className="text-[28px] font-normal text-gray-500 leading-none whitespace-nowrap"
+                style={{ fontSize: unitPx }}
+              >
                 {unit}
               </span>
             </span>
