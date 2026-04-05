@@ -121,3 +121,12 @@ export interface RoomLogsResponseDTO {
   items: RoomLogPointDTO[];
   nextCursor?: ISODateTimeKst;
 }
+
+/** YYYY-MM-DD (KST 달력) distinct 목록, 내림차순(최신일 우선) */
+export interface RoomLogDatesResponseDTO {
+  serverNowKst: ISODateTimeKst;
+  key12: Key12;
+  /** 쿼리에 사용한 월 YYYY-MM (KST) */
+  month: string;
+  dates: string[];
+}

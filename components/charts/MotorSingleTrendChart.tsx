@@ -65,7 +65,9 @@ export default function MotorSingleTrendChart({
     .map((log) => {
       const values = getValues(log);
       const row: Record<string, string | number | null> = {
-        time: new Date(log.measureTsKst).toLocaleTimeString("ko-KR", {
+        time: new Date(log.measureTsKst).toLocaleString("ko-KR", {
+          month: "numeric",
+          day: "numeric",
           hour: "2-digit",
           minute: "2-digit",
         }),
@@ -119,7 +121,15 @@ export default function MotorSingleTrendChart({
         >
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="time" />
+            <XAxis
+              dataKey="time"
+              interval="preserveStartEnd"
+              minTickGap={28}
+              tick={{ fontSize: 10 }}
+              angle={-32}
+              textAnchor="end"
+              height={56}
+            />
             <YAxis />
             <Tooltip
               formatter={(value, name) => [

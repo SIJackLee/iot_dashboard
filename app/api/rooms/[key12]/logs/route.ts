@@ -44,14 +44,12 @@ export async function GET(
       limit: actualLimit + 1, // nextCursor 판단용 +1
     };
 
-    // cursor 기반 페이징
+    // cursor 기반 페이징 (to와 동시 사용 시 더 이른 시각을 lte로 — 일 단위 조회 시 상한 유지)
     let cursorDate: Date | null = null;
     if (cursorParam) {
-      // cursor는 KST ISO 문자열이지만, DB는 UTC이므로 변환 필요
       const parsed = new Date(cursorParam);
       if (!isNaN(parsed.getTime())) {
         cursorDate = parsed;
-        selectParams.lte = { measure_ts: parsed.toISOString() };
       }
     }
 
@@ -64,12 +62,19 @@ export async function GET(
       }
     }
 
+    let lteMs: number | null = null;
     if (toParam) {
       const toDate = new Date(toParam);
       if (!isNaN(toDate.getTime())) {
-        selectParams.lte = selectParams.lte || {};
-        selectParams.lte.measure_ts = toDate.toISOString();
+        lteMs = toDate.getTime();
       }
+    }
+    if (cursorDate) {
+      const c = cursorDate.getTime();
+      lteMs = lteMs != null ? Math.min(lteMs, c) : c;
+    }
+    if (lteMs != null) {
+      selectParams.lte = { measure_ts: new Date(lteMs).toISOString() };
     }
 
     let logRows = await supabaseSelect<{

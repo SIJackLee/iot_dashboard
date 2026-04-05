@@ -26,6 +26,8 @@ interface SensorCardProps {
   history?: number[]; // 스파크라인용 최근 값 배열
   showSparkline?: boolean;
   onClick?: () => void;
+  /** API 기준 오프라인일 때 값·스파크라인·임계 배지 숨김 */
+  isOffline?: boolean;
 }
 
 export default function SensorCard({
@@ -34,6 +36,7 @@ export default function SensorCard({
   history = [],
   showSparkline = true,
   onClick,
+  isOffline = false,
 }: SensorCardProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [headerScale, setHeaderScale] = useState(1);
@@ -51,13 +54,25 @@ export default function SensorCard({
 
   const identity = getSensorMetricStyle(sensorKey);
   const valueTextClass = getSensorValueTextClass(currentMax, thresholds);
-  const isDanger = thresholds != null && currentMax >= thresholds.danger;
-  const isWarn = thresholds != null && currentMax >= thresholds.warn && !isDanger;
+  const isDanger =
+    !isOffline && thresholds != null && currentMax >= thresholds.danger;
+  const isWarn =
+    !isOffline &&
+    thresholds != null &&
+    currentMax >= thresholds.warn &&
+    !isDanger;
   const sparkStrokeHex = isDanger ? DANGER_STROKE_HEX : identity.hex;
 
-  const stateLabel = isDanger ? "위험" : isWarn ? "경고" : "정상";
-  const stateBadgeClass =
-    isDanger
+  const stateLabel = isOffline
+    ? "오프라인"
+    : isDanger
+      ? "위험"
+      : isWarn
+        ? "경고"
+        : "정상";
+  const stateBadgeClass = isOffline
+    ? "text-gray-700 border-gray-300 bg-gray-100 text-[34px] leading-none"
+    : isDanger
       ? "text-red-700 border-red-300 bg-red-50 text-[34px] leading-none"
       : isWarn
         ? "text-yellow-700 border-yellow-300 bg-yellow-50 text-[34px] leading-none"
@@ -67,6 +82,10 @@ export default function SensorCard({
   const sparkStrokeOpacity = isDanger ? 1 : isWarn ? 0.7 : 0.55;
   const gradientTopOpacity = isDanger ? 0.3 : isWarn ? 0.18 : 0.12;
   const gradientBottomOpacity = isDanger ? 0.09 : isWarn ? 0.04 : 0.02;
+
+  const cardChrome = isOffline
+    ? { bg: "bg-gray-50", border: "border-gray-200" }
+    : { bg: identity.bg, border: identity.border };
 
   // 헤더 글자 크기 자동 축소(가로 폭이 줄면 줄바꿈 대신 폰트 사이즈를 줄임)
   useEffect(() => {
@@ -95,6 +114,7 @@ export default function SensorCard({
 
   // 트렌드 방향 계산
   const trendDirection = useMemo(() => {
+    if (isOffline) return "stable";
     const data = history.length > 0 ? history : values;
     if (data.length < 2) return "stable";
     const recent = data.slice(-5);
@@ -105,10 +125,11 @@ export default function SensorCard({
     if (diff > threshold) return "up";
     if (diff < -threshold) return "down";
     return "stable";
-  }, [history, values]);
+  }, [history, values, isOffline]);
 
   // 스파크라인 데이터 준비
   const sparklineData = useMemo(() => {
+    if (isOffline) return null;
     const data = history.length > 0 ? history : values;
     if (data.length < 2) return null;
     
@@ -122,7 +143,7 @@ export default function SensorCard({
       y: 100 - ((v - min) / range) * 100,
       value: v,
     }));
-  }, [history, values]);
+  }, [history, values, isOffline]);
 
   // SVG 경로 생성
   const sparklinePath = useMemo(() => {
@@ -134,15 +155,23 @@ export default function SensorCard({
 
   const gradientId = `sensor-grad-${sensorKey.replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
+  const ariaLabel =
+    onClick != null
+      ? isOffline
+        ? `${sensorLabel(sensorKey)} 오프라인, 측정값 숨김`
+        : `${sensorLabel(sensorKey)} ${stateLabel}, ${displayValue != null ? displayValue.toFixed(1) : ""}${unit ? ` ${unit}` : ""}`
+      : undefined;
+
   return (
     <div
-      className={`rounded-lg border p-3 transition-all min-h-[7.25rem] flex flex-col ${identity.bg} ${identity.border} ${
+      className={`rounded-lg border p-3 transition-all min-h-[7.25rem] flex flex-col ${cardChrome.bg} ${cardChrome.border} ${
         onClick
           ? "cursor-pointer hover:shadow-md hover:-translate-y-[1px] active:translate-y-0"
           : ""
       }`}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
+      aria-label={ariaLabel}
       onClick={onClick}
       onKeyDown={(e) => {
         if (!onClick) return;
@@ -172,7 +201,7 @@ export default function SensorCard({
         </div>
         <div className="flex items-center gap-1.5 min-w-0 flex-none whitespace-nowrap">
           {/* Trend Arrow */}
-          {trendDirection !== "stable" && (
+          {!isOffline && trendDirection !== "stable" && (
             <span
               className={`text-[34px] leading-none whitespace-nowrap ${
                 trendDirection === "up" ? "text-red-500" : "text-blue-500"
@@ -182,7 +211,14 @@ export default function SensorCard({
               {trendDirection === "up" ? "▲" : "▼"}
             </span>
           )}
-          {displayValue != null ? (
+          {isOffline ? (
+            <span
+              className="text-[44px] font-semibold text-gray-400 leading-none whitespace-nowrap tabular-nums"
+              style={{ fontSize: valuePx }}
+            >
+              --
+            </span>
+          ) : displayValue != null ? (
             <span className="inline-flex items-baseline gap-x-0.5 whitespace-nowrap">
               <span
                 className={`text-[44px] font-bold leading-none ${valueTextClass} whitespace-nowrap`}
@@ -203,7 +239,11 @@ export default function SensorCard({
 
       {/* Mini Sparkline — fill은 지표 고유색, 위험 시 선·끝점만 빨강 */}
       <div className="mt-auto min-h-24 flex-1 flex flex-col justify-end">
-        {showSparkline && sparklineData && sparklineData.length >= 2 ? (
+        {isOffline ? (
+          <div className="text-xs text-gray-500 min-h-24 flex items-end">
+            수신 끊김 · 측정값 미표시
+          </div>
+        ) : showSparkline && sparklineData && sparklineData.length >= 2 ? (
           <div className="h-24 w-full">
             <svg
               viewBox="0 0 100 100"

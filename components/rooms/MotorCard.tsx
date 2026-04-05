@@ -15,6 +15,8 @@ interface MotorCardProps {
   /** 추후 확장용 (이번 단계에서는 미사용) */
   maxRpm?: number;
   onClick?: () => void;
+  /** API 기준 오프라인일 때 RPM·가동 배지·스파크라인 숨김 */
+  isOffline?: boolean;
 }
 
 function avg(values: number[]): number | null {
@@ -29,6 +31,7 @@ export default function MotorCard({
   history = [],
   showSparkline = true,
   onClick,
+  isOffline = false,
 }: MotorCardProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [headerScale, setHeaderScale] = useState(1);
@@ -38,11 +41,11 @@ export default function MotorCard({
   const currentAvgRaw = useMemo(() => avg(values), [values]);
   const displayValue = currentAvgRaw == null ? null : convertMotorValue(motorKey, currentAvgRaw);
 
-  const running = (currentAvgRaw ?? 0) > 0;
-  const stateLabel = running ? "가동" : "정지";
+  const running = !isOffline && (currentAvgRaw ?? 0) > 0;
+  const stateLabel = isOffline ? "오프라인" : running ? "가동" : "정지";
 
   const tone = useMemo(() => {
-    if (!running) {
+    if (isOffline || !running) {
       return {
         bg: "bg-gray-50",
         border: "border-gray-200",
@@ -57,7 +60,7 @@ export default function MotorCard({
       spark: id.hex,
       fillHex: id.hex,
     };
-  }, [running, motorKey]);
+  }, [running, motorKey, isOffline]);
 
   const sparkStrokeWidth = running ? 1.5 : 1.2;
   const sparkStrokeOpacity = running ? 0.55 : 0.38;
@@ -90,6 +93,7 @@ export default function MotorCard({
   const unitPx = 28 * headerScale;
 
   const trendDirection = useMemo(() => {
+    if (isOffline) return "stable";
     const data = history.length > 0 ? history : [];
     if (data.length < 2) return "stable";
     const recent = data.slice(-5);
@@ -100,9 +104,10 @@ export default function MotorCard({
     if (diff > threshold) return "up";
     if (diff < -threshold) return "down";
     return "stable";
-  }, [history]);
+  }, [history, isOffline]);
 
   const sparklineData = useMemo(() => {
+    if (isOffline) return null;
     const data = history.length > 0 ? history : [];
     if (data.length < 2) return null;
     const points = data.slice(-20);
@@ -113,17 +118,26 @@ export default function MotorCard({
       x: (i / (points.length - 1)) * 100,
       y: 100 - ((v - min) / range) * 100,
     }));
-  }, [history]);
+  }, [history, isOffline]);
 
   const sparklinePath = useMemo(() => {
     if (!sparklineData || sparklineData.length < 2) return "";
     return sparklineData.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
   }, [sparklineData]);
 
-  const hasValue = displayValue != null;
-  const hasHistory = Boolean(showSparkline && sparklineData && sparklineData.length >= 2);
+  const hasValue = !isOffline && displayValue != null;
+  const hasHistory = Boolean(
+    !isOffline && showSparkline && sparklineData && sparklineData.length >= 2
+  );
 
   const gradientId = `motor-grad-${motorKey}`;
+
+  const ariaLabel =
+    onClick != null
+      ? isOffline
+        ? `${motorLabel(motorKey)} 오프라인, RPM 미표시`
+        : `${motorLabel(motorKey)} ${stateLabel}, ${hasValue ? `${displayValue!.toFixed(0)} ${unit}` : "-"}`
+      : undefined;
 
   return (
     <div
@@ -134,6 +148,7 @@ export default function MotorCard({
       }`}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
+      aria-label={ariaLabel}
       onClick={onClick}
       onKeyDown={(e) => {
         if (!onClick) return;
@@ -155,9 +170,11 @@ export default function MotorCard({
           <Badge
             variant="outline"
             className={
-              running
-                ? "text-green-700 border-green-300 bg-green-50 text-[34px] leading-none px-2 py-0.5 whitespace-nowrap"
-                : "text-gray-700 border-gray-300 bg-gray-50 text-[34px] leading-none px-2 py-0.5 whitespace-nowrap"
+              isOffline
+                ? "text-gray-700 border-gray-300 bg-gray-100 text-[34px] leading-none px-2 py-0.5 whitespace-nowrap"
+                : running
+                  ? "text-green-700 border-green-300 bg-green-50 text-[34px] leading-none px-2 py-0.5 whitespace-nowrap"
+                  : "text-gray-700 border-gray-300 bg-gray-50 text-[34px] leading-none px-2 py-0.5 whitespace-nowrap"
             }
             style={{ fontSize: labelPx }}
           >
@@ -165,7 +182,7 @@ export default function MotorCard({
           </Badge>
         </div>
         <div className="flex items-center gap-1.5 min-w-0 flex-none whitespace-nowrap">
-          {trendDirection !== "stable" && (
+          {!isOffline && trendDirection !== "stable" && (
             <span
               className={`text-[34px] leading-none whitespace-nowrap ${
                 trendDirection === "up" ? "text-red-500" : "text-blue-500"
@@ -175,7 +192,14 @@ export default function MotorCard({
               {trendDirection === "up" ? "▲" : "▼"}
             </span>
           )}
-          {hasValue ? (
+          {isOffline ? (
+            <span
+              className="text-[44px] font-semibold text-gray-400 tabular-nums leading-none whitespace-nowrap"
+              style={{ fontSize: valuePx }}
+            >
+              --
+            </span>
+          ) : hasValue ? (
             <span className="inline-flex items-baseline gap-x-0.5 whitespace-nowrap">
               <span
                 className="text-[44px] font-bold tabular-nums text-gray-900 leading-none whitespace-nowrap"
@@ -245,7 +269,11 @@ export default function MotorCard({
           </div>
         ) : (
           <div className="text-xs text-gray-500 min-h-24 flex items-end">
-            {showSparkline ? "추세 데이터 없음" : "추세 숨김"}
+            {isOffline
+              ? "수신 끊김 · RPM 미표시"
+              : showSparkline
+                ? "추세 데이터 없음"
+                : "추세 숨김"}
           </div>
         )}
       </div>

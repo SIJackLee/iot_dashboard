@@ -2,13 +2,15 @@
 
 "use client";
 
-import type { SensorsDTO, RoomLogPointDTO } from "@/types/dto";
+import type { RoomState, SensorsDTO, RoomLogPointDTO } from "@/types/dto";
 import SensorCard from "./SensorCard";
 
 interface SensorCardGridProps {
   sensors: SensorsDTO;
   logs?: RoomLogPointDTO[]; // 스파크라인용 로그 데이터
   onSelectSensor?: (sensorKey: keyof SensorsDTO) => void;
+  /** 오프라인이면 카드에서 측정값·스파크라인 마스킹 */
+  roomState?: RoomState;
 }
 
 const SENSOR_THRESHOLDS: Record<string, { warn: number; danger: number }> = {
@@ -23,7 +25,9 @@ export default function SensorCardGrid({
   sensors,
   logs = [],
   onSelectSensor,
+  roomState,
 }: SensorCardGridProps) {
+  const isOffline = roomState === "offline";
   const sensorKeys: Array<keyof SensorsDTO> = ["es01", "es02", "es03", "es04", "es09"];
 
   // 로그에서 각 센서별 히스토리 추출
@@ -81,8 +85,9 @@ export default function SensorCardGrid({
           sensorKey={key}
           values={sensors[key]}
           history={getHistory(key)}
-          showSparkline={logs.length > 0}
+          showSparkline={logs.length > 0 && !isOffline}
           onClick={onSelectSensor ? () => onSelectSensor(key) : undefined}
+          isOffline={isOffline}
         />
       ))}
     </div>

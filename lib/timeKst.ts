@@ -62,3 +62,71 @@ export function diffSec(
 
   return Math.floor((nowDate.getTime() - targetDate.getTime()) / 1000);
 }
+
+/** measure_ts(UTC) 한 점을 KST 달력 날짜 YYYY-MM-DD로 */
+export function kstYmdFromMeasureTs(measureTsUtc: string): string {
+  return toKstIso(measureTsUtc).slice(0, 10);
+}
+
+/**
+ * KST 달력 일 하루 구간 — 로그 API from / to(lte)용 (UTC ISO)
+ * @param yyyyMmDd KST 기준 YYYY-MM-DD
+ */
+export function kstDayRangeUtcIso(yyyyMmDd: string): {
+  fromUtcIso: string;
+  toUtcInclusiveIso: string;
+} {
+  const start = new Date(`${yyyyMmDd}T00:00:00+09:00`);
+  const endInclusive = new Date(start.getTime() + 24 * 60 * 60 * 1000 - 1);
+  return {
+    fromUtcIso: start.toISOString(),
+    toUtcInclusiveIso: endInclusive.toISOString(),
+  };
+}
+
+/**
+ * KST 달력 월 구간 — log-dates 월 스코프용 (UTC ISO, to는 해당 월 마지막 순간)
+ * @param monthYm YYYY-MM
+ */
+export function kstMonthRangeUtcIso(monthYm: string): {
+  fromUtcIso: string;
+  toUtcInclusiveIso: string;
+} {
+  const m = /^(\d{4})-(\d{2})$/.exec(monthYm.trim());
+  if (!m) {
+    throw new Error(`Invalid month YYYY-MM: ${monthYm}`);
+  }
+  const y = parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10);
+  if (mo < 1 || mo > 12) {
+    throw new Error(`Invalid month YYYY-MM: ${monthYm}`);
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const start = new Date(`${y}-${pad(mo)}-01T00:00:00+09:00`);
+  const nextMo = mo === 12 ? 1 : mo + 1;
+  const nextY = mo === 12 ? y + 1 : y;
+  const nextMonthStart = new Date(`${nextY}-${pad(nextMo)}-01T00:00:00+09:00`);
+  const endInclusive = new Date(nextMonthStart.getTime() - 1);
+  return {
+    fromUtcIso: start.toISOString(),
+    toUtcInclusiveIso: endInclusive.toISOString(),
+  };
+}
+
+/** 브라우저/서버 공통 — Asia/Seoul 달력 기준 오늘 날짜·월 문자열 */
+export function kstCalendarTodayParts(): { yyyyMmDd: string; yyyyMm: string } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const get = (t: Intl.DateTimeFormatPartTypes) =>
+    parts.find((p) => p.type === t)?.value ?? "";
+  const y = get("year");
+  const mo = get("month");
+  const d = get("day");
+  const yyyyMmDd = `${y}-${mo}-${d}`;
+  const yyyyMm = `${y}-${mo}`;
+  return { yyyyMmDd, yyyyMm };
+}

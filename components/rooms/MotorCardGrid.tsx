@@ -1,6 +1,6 @@
 "use client";
 
-import type { MotorsDTO, RoomLogPointDTO } from "@/types/dto";
+import type { MotorsDTO, RoomLogPointDTO, RoomState } from "@/types/dto";
 import MotorCard from "./MotorCard";
 
 type MotorKey = "ec01" | "ec02" | "ec03";
@@ -11,6 +11,8 @@ interface MotorCardGridProps {
   /** 추후 확장용 (이번 단계에서는 미사용) */
   maxRpm?: Partial<Record<MotorKey, number>>;
   onSelectMotor?: (motorKey: MotorKey) => void;
+  /** 오프라인이면 카드에서 RPM·스파크라인 마스킹 */
+  roomState?: RoomState;
 }
 
 const MOTOR_KEYS: MotorKey[] = ["ec01", "ec02", "ec03"];
@@ -29,7 +31,10 @@ export default function MotorCardGrid({
   motors,
   logs = [],
   onSelectMotor,
+  roomState,
 }: MotorCardGridProps) {
+  const isOffline = roomState === "offline";
+
   const getHistory = (key: MotorKey): number[] => {
     if (logs.length === 0) return [];
     return logs
@@ -57,8 +62,9 @@ export default function MotorCardGrid({
           motorKey={key}
           values={((motors as MotorsDTO)[key] as number[] | null) ?? []}
           history={getHistory(key)}
-          showSparkline={logs.length > 0}
+          showSparkline={logs.length > 0 && !isOffline}
           onClick={onSelectMotor ? () => onSelectMotor(key) : undefined}
+          isOffline={isOffline}
         />
       ))}
     </div>
