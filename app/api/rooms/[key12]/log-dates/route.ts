@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import { supabaseSelect } from "@/lib/supabaseServer";
 import { serverNowKst, kstMonthRangeUtcIso, kstYmdFromMeasureTs } from "@/lib/timeKst";
+import { getAccessScope, isKey12Allowed } from "@/lib/auth/server";
 import type { RoomLogDatesResponseDTO } from "@/types/dto";
 
 const PAGE_SIZE = 300;
@@ -14,7 +15,17 @@ export async function GET(
   { params }: { params: Promise<{ key12: string }> }
 ) {
   try {
-    const { key12 } = await params;
+    const { key12: rawKey12 } = await params;
+    const key12 = rawKey12.trim();
+
+    const scope = await getAccessScope();
+    if (!scope) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!isKey12Allowed(scope.allowedKey12s, key12)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const url = new URL(request.url);
     let monthYm = url.searchParams.get("month")?.trim() ?? "";
 

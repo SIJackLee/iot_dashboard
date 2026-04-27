@@ -48,9 +48,28 @@ export default function MotorControlPanel({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [appliedMotor, setAppliedMotor] = useState<MotorKey | null>(null);
   const [sendingMotor, setSendingMotor] = useState<MotorKey | null>(null);
+  const [isViewer, setIsViewer] = useState(false);
   const appliedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastCmdIdRef = useRef<string | null>(null);
+
+  // viewer role 식별 (props 시그니처 변경 없이 컴포넌트 내부에서 1회 페치)
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/me", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { role: "admin" | "farmer" | "viewer" | null } | null) => {
+        if (!cancelled) setIsViewer(data?.role === "viewer");
+      })
+      .catch(() => {
+        // 실패 시 보수적으로 비활성화하지 않음 (기존 사용자 흐름 보존). 서버 가드가 최종 차단.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const controlsDisabled = loading || isViewer;
 
   const eqOf = (k: MotorKey): "EC01" | "EC02" | "EC03" =>
     k === "ec01" ? "EC01" : k === "ec02" ? "EC02" : "EC03";
@@ -198,17 +217,29 @@ export default function MotorControlPanel({
     return (
       <div className="rounded-lg p-0">
         <h3 className="font-semibold mb-3 text-sm sm:text-base">모터 제어 (체험 모드)</h3>
+        {isViewer && (
+          <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            조회 전용 계정입니다. 원격 제어는 사용할 수 없습니다.
+          </div>
+        )}
         <MotorControlDemoView
           sliderValues={sliderValues}
           motors={motors}
           roomState={roomState}
           onSliderChange={(k, v) => {
+            if (isViewer) return;
             setSliderValues((prev) => ({ ...prev, [k]: v }));
             setValues((prev) => ({ ...prev, [k]: String(v) }));
           }}
-          onSliderCommit={handleSliderCommitAndSend}
-          onPresetAndSend={handlePresetAndSend}
-          loading={loading}
+          onSliderCommit={(k, v) => {
+            if (isViewer) return;
+            return handleSliderCommitAndSend(k, v);
+          }}
+          onPresetAndSend={(k, v) => {
+            if (isViewer) return;
+            return handlePresetAndSend(k, v);
+          }}
+          loading={controlsDisabled}
           errorMessage={errorMessage}
           appliedMotor={appliedMotor}
           sendingMotor={sendingMotor}
@@ -221,6 +252,11 @@ export default function MotorControlPanel({
   return (
     <div className="rounded-lg border bg-white p-4 shadow-sm">
       <h3 className="font-semibold mb-3 text-sm sm:text-base">모터 제어</h3>
+      {isViewer && (
+        <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          조회 전용 계정입니다. 원격 제어는 사용할 수 없습니다.
+        </div>
+      )}
       <div className="space-y-3">
         {/* 프리셋 */}
         <div className="flex flex-wrap gap-2">
@@ -231,6 +267,7 @@ export default function MotorControlPanel({
               variant="outline"
               size="sm"
               onClick={() => applyPreset(pct)}
+              disabled={controlsDisabled}
               className="min-h-[44px] min-w-[52px] touch-manipulation"
             >
               {pct === 0 ? "정지" : `${pct}%`}
@@ -251,12 +288,13 @@ export default function MotorControlPanel({
                   max={100}
                   step={5}
                   value={Math.min(100, Math.max(0, sliderValues[k]))}
+                  disabled={controlsDisabled}
                   onChange={(e) => {
                     const n = Number(e.target.value);
                     setSliderValues((prev) => ({ ...prev, [k]: n }));
                     setValues((prev) => ({ ...prev, [k]: String(n) }));
                   }}
-                  className="flex-1 h-3 sm:h-2 min-h-[44px] sm:min-h-0 rounded-full appearance-none bg-gray-200 accent-blue-600 touch-manipulation"
+                  className="flex-1 h-3 sm:h-2 min-h-[44px] sm:min-h-0 rounded-full appearance-none bg-gray-200 accent-blue-600 touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <Input
                   type="number"
@@ -265,6 +303,7 @@ export default function MotorControlPanel({
                   step={5}
                   placeholder="0"
                   value={values[k]}
+                  disabled={controlsDisabled}
                   onChange={(e) => {
                     const v = e.target.value;
                     setValues((prev) => ({ ...prev, [k]: v }));
@@ -284,7 +323,7 @@ export default function MotorControlPanel({
           <Button
             size="sm"
             onClick={handleSend}
-            disabled={loading}
+            disabled={controlsDisabled}
             className="min-h-[44px] min-w-[100px] touch-manipulation"
           >
             {loading ? "전송 중..." : "명령 전송"}

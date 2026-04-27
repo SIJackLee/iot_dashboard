@@ -5,6 +5,7 @@ import { supabaseSelect } from "@/lib/supabaseServer";
 import { serverNowKst, toKstIso, diffSec } from "@/lib/timeKst";
 import { getFarmOfflineThSec } from "@/lib/offlineProfile";
 import { calculateState } from "@/lib/stateRules";
+import { getAccessScope, isRegistNoAllowed } from "@/lib/auth/server";
 import type { FarmDetailDTO, StallDetailDTO, RoomSnapshotLiteDTO } from "@/types/dto";
 
 type MappingSelectParams = {
@@ -53,6 +54,14 @@ export async function GET(
   try {
     const { registNo } = await params;
 
+    const scope = await getAccessScope();
+    if (!scope) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!isRegistNoAllowed(scope.allowedRegistNos, registNo)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const url = new URL(request.url);
     const stallNoParam = url.searchParams.get("stallNo");
 
@@ -88,7 +97,7 @@ export async function GET(
         stalls: [],
       } as FarmDetailDTO, {
         headers: {
-          "Cache-Control": "public, max-age=3, stale-while-revalidate=3",
+          "Cache-Control": "private, max-age=3, stale-while-revalidate=3",
         },
       });
     }
@@ -234,7 +243,7 @@ export async function GET(
       stalls,
     } as FarmDetailDTO, {
       headers: {
-        "Cache-Control": "public, max-age=3, stale-while-revalidate=3",
+        "Cache-Control": "private, max-age=3, stale-while-revalidate=3",
       },
     });
   } catch (error: unknown) {

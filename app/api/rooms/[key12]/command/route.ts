@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { supabaseInsert } from "@/lib/supabaseServer";
+import { assertCanControlKey12 } from "@/lib/auth/server";
 
 type MotorEq = "EC01" | "EC02" | "EC03";
 
@@ -22,12 +23,21 @@ export async function POST(
   { params }: { params: Promise<{ key12: string }> }
 ) {
   try {
-    const { key12 } = await params;
+    const { key12: rawKey12 } = await params;
+    const key12 = (rawKey12 ?? "").trim();
 
     if (!key12 || key12.length !== 12) {
       return NextResponse.json(
         { error: "Invalid key12 (12자리 필수)" },
         { status: 400 }
+      );
+    }
+
+    const guard = await assertCanControlKey12(key12);
+    if (!guard.ok) {
+      return NextResponse.json(
+        { error: guard.error },
+        { status: guard.status }
       );
     }
 

@@ -4,24 +4,59 @@ import { NextResponse } from "next/server";
 import { supabaseSelect } from "@/lib/supabaseServer";
 import { serverNowKst, toKstIso, diffSec } from "@/lib/timeKst";
 import { calculateState } from "@/lib/stateRules";
+import {
+  getAccessScope,
+  makeScopeCacheKey,
+  type AllowedRegistNos,
+} from "@/lib/auth/server";
 import type {
   FarmsSummaryResponseDTO,
   FarmSummaryDTO,
 } from "@/types/dto";
 
 const SUMMARY_CACHE_TTL_MS = 30000; // 10초 → 30초로 증가 (캐시 히트율 향상)
-let summaryCache: { data: FarmsSummaryResponseDTO; expiresAt: number } | null =
-  null;
+// 사용자 접근 범위(스코프)별로 캐시를 분리하여 다른 사용자 간 데이터 누수 방지.
+const summaryCacheByScope = new Map<
+  string,
+  { data: FarmsSummaryResponseDTO; expiresAt: number }
+>();
 
 export async function GET(request: Request) {
   try {
+    const scope = await getAccessScope();
+    if (!scope) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+    const allowedRegistNos: AllowedRegistNos = scope.allowedRegistNos;
+    const cacheKey = makeScopeCacheKey(allowedRegistNos);
+
     const { searchParams } = new URL(request.url);
     const limitParam = searchParams.get("limit");
     const limit = limitParam ? parseInt(limitParam, 10) : undefined;
 
+    // 비admin이면서 허용 농장이 없으면 즉시 빈 응답.
+    if (allowedRegistNos !== "*" && allowedRegistNos.length === 0) {
+      return NextResponse.json(
+        {
+          serverNowKst: serverNowKst(),
+          items: [],
+          totalCount: 0,
+        } as FarmsSummaryResponseDTO,
+        {
+          headers: {
+            "Cache-Control": "private, max-age=10, stale-while-revalidate=10",
+          },
+        }
+      );
+    }
+
     const nowMs = Date.now();
-    if (summaryCache && summaryCache.expiresAt > nowMs) {
-      const cachedData = summaryCache.data;
+    const cached = summaryCacheByScope.get(cacheKey);
+    if (cached && cached.expiresAt > nowMs) {
+      const cachedData = cached.data;
       // limit이 지정된 경우 캐시된 데이터에서 슬라이스
       if (limit !== undefined && limit > 0) {
         return NextResponse.json(
@@ -32,14 +67,14 @@ export async function GET(request: Request) {
           },
           {
             headers: {
-              "Cache-Control": "public, max-age=10, stale-while-revalidate=10",
+              "Cache-Control": "private, max-age=10, stale-while-revalidate=10",
             },
           }
         );
       }
       return NextResponse.json(cachedData, {
         headers: {
-          "Cache-Control": "public, max-age=10, stale-while-revalidate=10",
+          "Cache-Control": "private, max-age=10, stale-while-revalidate=10",
         },
       });
     }
@@ -74,6 +109,9 @@ export async function GET(request: Request) {
           {
             select: "isind_regist_no",
             order: "isind_regist_no",
+            ...(allowedRegistNos !== "*"
+              ? { in: { isind_regist_no: allowedRegistNos } }
+              : {}),
           }
         );
         
@@ -121,6 +159,9 @@ export async function GET(request: Request) {
               order: "key12",
               limit: pageLimit,
               offset,
+              ...(allowedRegistNos !== "*"
+                ? { in: { isind_regist_no: allowedRegistNos } }
+                : {}),
             }
           );
           
@@ -292,10 +333,10 @@ export async function GET(request: Request) {
       items,
       totalCount,
     };
-    summaryCache = {
+    summaryCacheByScope.set(cacheKey, {
       data: responseData,
       expiresAt: Date.now() + SUMMARY_CACHE_TTL_MS,
-    };
+    });
     
     // limit이 지정된 경우 해당 개수만 반환 (하지만 totalCount는 전체 개수 유지)
     const finalItems = limit !== undefined && limit > 0 
@@ -310,7 +351,7 @@ export async function GET(request: Request) {
       },
       {
         headers: {
-          "Cache-Control": "public, max-age=10, stale-while-revalidate=10",
+          "Cache-Control": "private, max-age=10, stale-while-revalidate=10",
         },
       }
     );

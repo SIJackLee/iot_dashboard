@@ -5,6 +5,11 @@ import { supabaseSelect } from "@/lib/supabaseServer";
 import { serverNowKst, toKstIso, diffSec } from "@/lib/timeKst";
 import { calculateState } from "@/lib/stateRules";
 import { getFarmOfflineThSec } from "@/lib/offlineProfile";
+import {
+  getAccessScope,
+  isRegistNoAllowed,
+  isKey12Allowed,
+} from "@/lib/auth/server";
 
 type LogRow = {
   key12: string;
@@ -63,11 +68,35 @@ function getMax(values: number[] | null | undefined): number {
 
 export async function GET(request: Request) {
   try {
+    const scope = await getAccessScope();
+    if (!scope) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const url = new URL(request.url);
     const range = url.searchParams.get("range") || "6h";
     const limitParam = url.searchParams.get("limit");
     const statesParam = url.searchParams.get("states") || "warn,danger,offline";
     const registNoParam = url.searchParams.get("registNo");
+
+    // 비admin이면서 허용 농장이 없으면 즉시 빈 응답.
+    if (
+      scope.allowedRegistNos !== "*" &&
+      scope.allowedRegistNos.length === 0
+    ) {
+      return NextResponse.json({
+        serverNowKst: serverNowKst(),
+        items: [],
+      });
+    }
+
+    // registNo 쿼리 파라미터가 비허용 농장이면 403.
+    if (
+      registNoParam &&
+      !isRegistNoAllowed(scope.allowedRegistNos, registNoParam)
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const rangeMin = RANGE_TO_MIN[range] ?? RANGE_TO_MIN["6h"];
     const limit = Math.min(Math.max(parseInt(limitParam || "50", 10), 1), 200);
@@ -112,7 +141,18 @@ export async function GET(request: Request) {
         in: { key12: group },
       });
       mappingRows.push(
-        ...rows.filter((r) => !registNoParam || r.isind_regist_no === registNoParam)
+        ...rows.filter((r) => {
+          if (registNoParam && r.isind_regist_no !== registNoParam) {
+            return false;
+          }
+          if (!isRegistNoAllowed(scope.allowedRegistNos, r.isind_regist_no)) {
+            return false;
+          }
+          if (!isKey12Allowed(scope.allowedKey12s, r.key12)) {
+            return false;
+          }
+          return true;
+        })
       );
     }
 

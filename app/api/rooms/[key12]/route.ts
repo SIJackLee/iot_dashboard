@@ -5,6 +5,7 @@ import { supabaseSelect } from "@/lib/supabaseServer";
 import { serverNowKst, toKstIso, diffSec } from "@/lib/timeKst";
 import { getFarmOfflineThSec } from "@/lib/offlineProfile";
 import { calculateState } from "@/lib/stateRules";
+import { getAccessScope, isKey12Allowed } from "@/lib/auth/server";
 import type { RoomSnapshotFullDTO, SensorsDTO, MotorsDTO } from "@/types/dto";
 
 export async function GET(
@@ -12,7 +13,16 @@ export async function GET(
   { params }: { params: Promise<{ key12: string }> }
 ) {
   try {
-    const { key12 } = await params;
+    const { key12: rawKey12 } = await params;
+    const key12 = rawKey12.trim();
+
+    const scope = await getAccessScope();
+    if (!scope) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (!isKey12Allowed(scope.allowedKey12s, key12)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     // mapping row 조회
     const mappingRows = await supabaseSelect<{
@@ -137,7 +147,7 @@ export async function GET(
       motors,
     } as RoomSnapshotFullDTO, {
       headers: {
-        "Cache-Control": "public, max-age=3, stale-while-revalidate=3",
+        "Cache-Control": "private, max-age=3, stale-while-revalidate=3",
       },
     });
   } catch (error: unknown) {
