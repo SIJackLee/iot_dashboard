@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import LiveIndicator from "@/components/common/LiveIndicator";
 import PersistentAlertCounter from "@/components/common/PersistentAlertCounter";
+import { Button } from "@/components/ui/button";
 
 interface TopBarProps {
   summary?: ReactNode;
@@ -97,6 +98,9 @@ export default function TopBar({
               </div>
             </>
           )}
+          <Button asChild variant="outline" size="sm" className="shrink-0">
+            <Link href="/json">JSON v2</Link>
+          </Button>
           {isLoggedIn && (
             <div className="flex items-center gap-2">
               <div className="hidden sm:flex flex-col items-end leading-tight">

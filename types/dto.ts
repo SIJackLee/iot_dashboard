@@ -130,3 +130,36 @@ export interface RoomLogDatesResponseDTO {
   month: string;
   dates: string[];
 }
+
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+
+export interface JsonRawEqpmnDTO {
+  name: string;
+  values: JsonValue;
+}
+
+export interface JsonRawPayloadDTO {
+  typ?: JsonPrimitive;
+  seq?: JsonPrimitive;
+  measure_ts?: string | null;
+  eqpmn?: JsonRawEqpmnDTO[];
+  [key: string]: JsonValue | JsonRawEqpmnDTO[] | undefined;
+}
+
+export interface JsonRawItemDTO {
+  id: number;
+  registNo: RegistNo;
+  topic: string;
+  payload: JsonRawPayloadDTO;
+  receivedAtKst: ISODateTimeKst | null;
+  savedAtKst: ISODateTimeKst | null;
+}
+
+export interface JsonRawListResponseDTO {
+  serverNowKst: ISODateTimeKst;
+  totalCount: number;
+  latestReceivedAtKst: ISODateTimeKst | null;
+  latestTopic: string | null;
+  items: JsonRawItemDTO[];
+}

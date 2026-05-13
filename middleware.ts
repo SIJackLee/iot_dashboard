@@ -60,5 +60,6 @@ export const config = {
     "/farms/:path*",
     "/rooms/:path*",
     "/dashboard/:path*",
+    "/json/:path*",
   ],
 };
